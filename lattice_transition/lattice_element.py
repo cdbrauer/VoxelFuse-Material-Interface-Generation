@@ -27,7 +27,6 @@ if __name__=='__main__':
     for r in range(max_radius):
         print(str(r) + '/' + str(max_radius))
         modelResult = modelResult.dilate()
-        modelResult = modelResult.intersection(latticeModel.getBoundingBox())
     end = time.time()
     m1Time = (end - start)
     print(m1Time)
@@ -36,7 +35,6 @@ if __name__=='__main__':
     """
     start = time.time()
     modelResult2 = latticeModel.dilateLarge(max_radius)
-    modelResult2 = modelResult2.intersection(latticeModel.getBoundingBox())
     end = time.time()
     m2Time = (end - start)
     print(m2Time)
