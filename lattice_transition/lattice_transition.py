@@ -63,6 +63,7 @@ if __name__=='__main__':
 
                 if dilate_radius > 0:
                     latticeModelDilated = latticeModel.dilate(dilate_radius)
+                    latticeModelDilated = latticeModelDilated.intersection(latticeModel.getBoundingBox())
                 else:
                     latticeModelDilated = VoxelModel.emptyLike(latticeModel)
 

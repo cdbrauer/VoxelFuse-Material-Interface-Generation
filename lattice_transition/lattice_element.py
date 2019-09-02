@@ -33,15 +33,17 @@ if __name__=='__main__':
     print(m1Time)
 
     # Process Model - large dilate command
+    """
     start = time.time()
     modelResult2 = latticeModel.dilateLarge(max_radius)
     modelResult2 = modelResult2.intersection(latticeModel.getBoundingBox())
     end = time.time()
     m2Time = (end - start)
     print(m2Time)
+    """
 
     # Create Mesh
-    mesh1 = Mesh.fromVoxelModel(modelResult2)
+    mesh1 = Mesh.fromVoxelModel(modelResult)
 
     # Create Plot
     plot1 = Plot(mesh1)
