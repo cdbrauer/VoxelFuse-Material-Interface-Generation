@@ -20,7 +20,7 @@ if __name__=='__main__':
     mold = True
     moldWallThickness = 5
     moldGap = 2
-    export = True
+    export = False
 
     min_radius = 1  # min radius that results in a printable structure (1,  7)
     max_radius = 6  # radius that results in a solid cube              (6, 25)
