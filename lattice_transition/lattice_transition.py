@@ -25,9 +25,9 @@ if __name__=='__main__':
     min_radius = 1  # min radius that results in a printable structure (1,  7)
     max_radius = 6  # radius that results in a solid cube              (6, 25)
 
-    box_x = 15
-    box_y = 4
-    box_z = 4
+    box_x = 10
+    box_y = 2
+    box_z = 2
 
     # Import Models
     latticeModel = VoxelModel.fromVoxFile(lattice_element_file + '.vox')
@@ -105,6 +105,7 @@ if __name__=='__main__':
     app1.processEvents()
 
     if export:
-        mesh2.export('test_coupon_' + lattice_element_file + '.stl')
+        mesh1.export(lattice_element_file + '_' + str(box_y) + 'x' + str(box_z) + 'x' + str(box_x * 2) + '_no_mold.stl')
+        mesh2.export(lattice_element_file + '_' + str(box_y) + 'x' + str(box_z) + 'x' + str(box_x * 2) + '.stl')
 
     app1.exec_()
