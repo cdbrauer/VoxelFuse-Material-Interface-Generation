@@ -26,7 +26,7 @@ if __name__=='__main__':
 
     # Dilate radius that results in a cube
     min_radius = 1  # min radius that results in a printable structure (1,  7)
-    max_radius = 7  # radius that results in a solid cube              (7, 25)
+    max_radius = 6  # radius that results in a solid cube              (7, 25)
 
     # Import Models
     latticeModel = VoxelModel.fromVoxFile(lattice_element_file + '.vox')
@@ -71,10 +71,10 @@ if __name__=='__main__':
                 z_center = int(z + (lattice_size/2))
 
                 density = modelResult.model[y_center, z_center, x_center, 0] * (1 - modelResult.model[y_center, z_center, x_center, 1])
-                dilate_radius = int(density * (max_radius-min_radius))
 
-                if dilate_radius > 0:
-                    latticeModelDilated = latticeModel.dilateBounded(dilate_radius + min_radius)
+                if density > 0:
+                    dilate_radius = int(round(density * (max_radius - min_radius))) + min_radius
+                    latticeModelDilated = latticeModel.dilateBounded(dilate_radius)
                 else:
                     latticeModelDilated = VoxelModel.emptyLike(latticeModel)
 

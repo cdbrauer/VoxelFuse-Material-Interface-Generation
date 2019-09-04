@@ -15,18 +15,18 @@ from voxelfuse.plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
-    min_radius = 7   # min radius that results in a printable structure
-    max_radius = 25  # radius that results in a solid cube
+    min_radius = 1   # min radius that results in a printable structure
+    max_radius = 6  # radius that results in a solid cube
 
     # Import Models
-    latticeModel = VoxelModel.fromVoxFile('lattice_element_1.vox')
+    latticeModel = VoxelModel.fromVoxFile('lattice_element_1m.vox')
     lattice_size = len(latticeModel.model[0, 0, :, 0])
 
     start = time.time()
 
-    # Process Model - standard dilate command
+    # Process Model
     modelResult = VoxelModel.copy(latticeModel)
-    modelResult = modelResult.dilateBounded(min_radius)
+    modelResult = modelResult.dilateBounded(max_radius)
 
     end = time.time()
     m1Time = (end - start)
