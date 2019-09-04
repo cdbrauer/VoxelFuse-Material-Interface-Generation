@@ -16,21 +16,32 @@ from voxelfuse.materials import materials
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
+    lattice_element_file = 'lattice_element_1m'
+
+    mold = True
+    moldWallThickness = 5
+    moldGap = 2
+
+    export = True
+
+    # Dilate radius that results in a cube
+    min_radius = 1  # min radius that results in a printable structure (1,  7)
+    max_radius = 7  # radius that results in a solid cube              (7, 25)
+
     # Import Models
-    #baseModel = VoxelModel.fromVoxFile('material_interface_1.vox')
-    latticeModel = VoxelModel.fromVoxFile('lattice_element_1m.vox')
+    latticeModel = VoxelModel.fromVoxFile(lattice_element_file + '.vox')
     lattice_size = len(latticeModel.model[0, 0, :, 0])
     print('Lattice Element Imported')
 
-    # Generate baseModel instead of importing
-    box = np.ones((lattice_size*2, lattice_size*2, lattice_size*10, len(materials)+1))
+    # Generate baseModel
+    box = np.ones((lattice_size*2, lattice_size*2, lattice_size*20, len(materials)+1))
     box1 = VoxelModel(box, 0, 0, 0).setMaterial(1)
     box2 = VoxelModel(box, lattice_size*10, 0, 0).setMaterial(3)
     baseModel = box1.union(box2)
     print('Model Created')
 
     # Process Models
-    modelResult = baseModel.blur(100)
+    modelResult = baseModel.blur(lattice_size*6)
     modelResult = modelResult - modelResult.setMaterial(3)
     modelResult = modelResult.scaleNull()
     print('Model Processed')
@@ -45,6 +56,7 @@ if __name__=='__main__':
 
     latticeResult = VoxelModel.emptyLike(modelResult)
 
+    print('Lattice Generation:')
     for x in x_repeat:
         print(str(x) + '/' + str(x_repeat[-1]))
 
@@ -59,11 +71,10 @@ if __name__=='__main__':
                 z_center = int(z + (lattice_size/2))
 
                 density = modelResult.model[y_center, z_center, x_center, 0] * (1 - modelResult.model[y_center, z_center, x_center, 1])
-                dilate_radius = int(density * 7)
+                dilate_radius = int(density * (max_radius-min_radius))
 
                 if dilate_radius > 0:
-                    latticeModelDilated = latticeModel.dilate(dilate_radius)
-                    latticeModelDilated = latticeModelDilated.intersection(latticeModel.getBoundingBox())
+                    latticeModelDilated = latticeModel.dilateBounded(dilate_radius + min_radius)
                 else:
                     latticeModelDilated = VoxelModel.emptyLike(latticeModel)
 
@@ -73,23 +84,29 @@ if __name__=='__main__':
 
     modelResult = modelResult.intersection(latticeResult)
     modelResult = modelResult.setMaterial(1)
-    modelResult2 = modelResult.union(baseModel.setMaterial(3))
-    modelResult3 = baseModel.setMaterial(3).difference(modelResult)
+    modelResultComplete = modelResult.union(baseModel.setMaterial(3))
+    modelResultCast = baseModel.setMaterial(3).difference(modelResult)
     print('Lattice Processed')
 
+    modelResultMold = VoxelModel.copy(modelResult)
+
+    if mold: # Generate mold feature
+        fixtureModel = modelResultComplete.web('laser', moldGap, moldWallThickness)
+        fixtureModel = fixtureModel.setMaterial(2)
+        modelResultMold = modelResultMold.union(fixtureModel)
+
+    print('Fixture Generated')
+
     # Create Mesh
-    mesh1 = Mesh.fromVoxelModel(modelResult)
-    mesh2 = Mesh.fromVoxelModel(modelResult2)
-    mesh3 = Mesh.fromVoxelModel(modelResult3)
+    mesh1 = Mesh.fromVoxelModel(modelResultMold)
     print('Mesh Created')
 
     # Create Plot
     plot1 = Plot(mesh1)
     plot1.show()
-    plot2 = Plot(mesh2)
-    plot2.show()
-    plot3 = Plot(mesh3)
-    plot3.show()
-
     app1.processEvents()
+
+    if export:
+        mesh1.export('test_coupon_' + lattice_element_file + '.stl')
+
     app1.exec_()

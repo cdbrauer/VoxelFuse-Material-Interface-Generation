@@ -15,32 +15,22 @@ from voxelfuse.plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
-    max_radius = 25
+    min_radius = 7   # min radius that results in a printable structure
+    max_radius = 25  # radius that results in a solid cube
 
     # Import Models
     latticeModel = VoxelModel.fromVoxFile('lattice_element_1.vox')
     lattice_size = len(latticeModel.model[0, 0, :, 0])
 
-    # Process Model - standard dilate command
     start = time.time()
+
+    # Process Model - standard dilate command
     modelResult = VoxelModel.copy(latticeModel)
-    for r in range(max_radius):
-        print(str(r) + '/' + str(max_radius))
-        modelResult = modelResult.dilate()
-        modelResult = modelResult.intersection(latticeModel.getBoundingBox())
+    modelResult = modelResult.dilateBounded(min_radius)
+
     end = time.time()
     m1Time = (end - start)
     print(m1Time)
-
-    # Process Model - large dilate command
-    """
-    start = time.time()
-    modelResult2 = latticeModel.dilateLarge(max_radius)
-    modelResult2 = modelResult2.intersection(latticeModel.getBoundingBox())
-    end = time.time()
-    m2Time = (end - start)
-    print(m2Time)
-    """
 
     # Create Mesh
     mesh1 = Mesh.fromVoxelModel(modelResult)
