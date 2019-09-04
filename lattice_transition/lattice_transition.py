@@ -56,9 +56,6 @@ if __name__=='__main__':
     # Convert processed model to lattice
     latticeResult = VoxelModel(np.zeros((1, 1, 1, len(materials)+1)))
 
-    iter_count = box_x * box_y * box_z
-    iter_current = 0
-
     print('Lattice Structure Generation:')
     for x in range(box_x * 2):
         print(str(x) + '/' + str(box_x * 2))
@@ -85,8 +82,9 @@ if __name__=='__main__':
     resinModel = resinModel.difference(latticeResult)
     print('Resin Model Created')
 
+    # Generate mold feature
     latticeResultMold = VoxelModel.copy(latticeResult)
-    if mold: # Generate mold feature
+    if mold: 
         fixtureModel = latticeResult.union(resinModel).web('laser', moldGap, moldWallThickness)
         fixtureModel = fixtureModel.setMaterial(2)
         latticeResultMold = latticeResultMold.union(fixtureModel)
