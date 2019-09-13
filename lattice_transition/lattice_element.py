@@ -20,13 +20,13 @@ if __name__=='__main__':
 
     # Import Models
     latticeModel = VoxelModel.fromVoxFile('lattice_element_1m.vox')
-    lattice_size = len(latticeModel.model[0, 0, :, 0])
+    lattice_size = len(latticeModel.voxels[:, 0, 0])
 
     start = time.time()
 
     # Process Model
     modelResult = VoxelModel.copy(latticeModel)
-    modelResult = modelResult.dilateBounded(max_radius)
+    modelResult = modelResult.dilateBounded(min_radius)
 
     end = time.time()
     m1Time = (end - start)
