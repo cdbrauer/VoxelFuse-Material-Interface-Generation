@@ -10,7 +10,7 @@ import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
-from voxelfuse.materials import materials
+from voxelfuse.materials import material_properties
 
 # Start Application
 if __name__=='__main__':
@@ -31,13 +31,14 @@ if __name__=='__main__':
 
     # Import Models
     latticeModel = VoxelModel.fromVoxFile(lattice_element_file + '.vox')
-    lattice_size = len(latticeModel.model[0, 0, :, 0])
+    lattice_size = len(latticeModel.voxels[0, 0, :])
     print('Lattice Element Imported')
 
     # Generate Base Model
-    box = np.ones((box_y, box_z, box_x, len(materials)+1))
-    box1 = VoxelModel(box, 0, 0, 0).setMaterial(1)
-    box2 = VoxelModel(box, box_x, 0, 0).setMaterial(3)
+    box = np.ones((box_x, box_y, box_z))
+    materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
+    box1 = VoxelModel(box, materials, 0, 0, 0).setMaterial(1)
+    box2 = VoxelModel(box, materials, box_x, 0, 0).setMaterial(3)
     baseModel = box1.union(box2)
     print('Model Created')
 
@@ -54,14 +55,15 @@ if __name__=='__main__':
     print('Lattice Elements Generated')
 
     # Convert processed model to lattice
-    latticeResult = VoxelModel(np.zeros((1, 1, 1, len(materials)+1)))
+    latticeResult = VoxelModel(np.zeros((1, 1, 1)), materials)
 
     print('Lattice Structure Generation:')
     for x in range(box_x * 2):
         print(str(x) + '/' + str(box_x * 2))
         for y in range(box_y):
             for z in range(box_z):
-                density =  modelResult.model[y, z, x, 0] * (1 - modelResult.model[y, z, x, 1])
+                i = modelResult.voxels[x, y, z]
+                density =  modelResult.materials[i, 0] * (1 - modelResult.materials[i, 1])
                 if density > 0:
                     r = int(round(density * (max_radius - min_radius))) + min_radius
                 else:
@@ -77,8 +79,8 @@ if __name__=='__main__':
     print('Lattice Structure Created')
 
     # Generate Resin Component
-    large_box = np.ones((box_y * lattice_size, box_z * lattice_size, box_x * lattice_size * 2, len(materials) + 1))
-    resinModel = VoxelModel(large_box, 0, 0, 0).setMaterial(3)
+    large_box = np.ones((box_x * lattice_size * 2, box_y * lattice_size, box_z * lattice_size))
+    resinModel = VoxelModel(large_box, materials, 0, 0, 0).setMaterial(3)
     resinModel = resinModel.difference(latticeResult)
     print('Resin Model Created')
 
@@ -103,7 +105,7 @@ if __name__=='__main__':
     app1.processEvents()
 
     if export:
-        mesh1.export(lattice_element_file + '_' + str(box_y) + 'x' + str(box_z) + 'x' + str(box_x * 2) + '_no_mold.stl')
-        mesh2.export(lattice_element_file + '_' + str(box_y) + 'x' + str(box_z) + 'x' + str(box_x * 2) + '.stl')
+        mesh1.export(lattice_element_file + '_' + str(box_x) + 'x' + str(box_y) + 'x' + str(box_z * 2) + '_no_mold.stl')
+        mesh2.export(lattice_element_file + '_' + str(box_x) + 'x' + str(box_y) + 'x' + str(box_z * 2) + '.stl')
 
     app1.exec_()
