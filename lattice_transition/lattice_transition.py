@@ -6,11 +6,10 @@ Dan Aukes, Cole Brauer
 # Import Libraries
 import PyQt5.QtGui as qg
 import sys
-import numpy as np
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
-from voxelfuse.materials import material_properties
+from voxelfuse_primitives.solid import Solid
 
 # Start Application
 if __name__=='__main__':
@@ -35,10 +34,8 @@ if __name__=='__main__':
     print('Lattice Element Imported')
 
     # Generate Base Model
-    box = np.ones((box_x, box_y, box_z))
-    materials = np.zeros((1, len(material_properties) + 1), dtype=np.float)
-    box1 = VoxelModel(box, materials, 0, 0, 0).setMaterial(1)
-    box2 = VoxelModel(box, materials, box_x, 0, 0).setMaterial(3)
+    box1 = Solid.cuboid((box_x, box_y, box_z), (0, 0, 0), 1)
+    box2 = Solid.cuboid((box_x, box_y, box_z), (box_x, 0, 0), 3)
     baseModel = box1.union(box2)
     print('Model Created')
 
@@ -55,7 +52,7 @@ if __name__=='__main__':
     print('Lattice Elements Generated')
 
     # Convert processed model to lattice
-    latticeResult = VoxelModel(np.zeros((1, 1, 1)), materials)
+    latticeResult = VoxelModel.emptyLike(baseModel)
 
     print('Lattice Structure Generation:')
     for x in range(box_x * 2):
@@ -79,8 +76,7 @@ if __name__=='__main__':
     print('Lattice Structure Created')
 
     # Generate Resin Component
-    large_box = np.ones((box_x * lattice_size * 2, box_y * lattice_size, box_z * lattice_size))
-    resinModel = VoxelModel(large_box, materials, 0, 0, 0).setMaterial(3)
+    resinModel = Solid.cuboid((box_x * lattice_size * 2, box_y * lattice_size, box_z * lattice_size), material=3)
     resinModel = resinModel.difference(latticeResult)
     print('Resin Model Created')
 
