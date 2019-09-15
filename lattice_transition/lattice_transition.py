@@ -6,6 +6,7 @@ Dan Aukes, Cole Brauer
 # Import Libraries
 import PyQt5.QtGui as qg
 import sys
+import time
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
@@ -31,6 +32,8 @@ if __name__=='__main__':
     box_x = 10
     box_y = 2
     box_z = 2
+
+    start = time.time()
 
     # Import Models
     latticeModel = VoxelModel.fromVoxFile(lattice_element_file + '.vox')
@@ -90,7 +93,7 @@ if __name__=='__main__':
         fixtureModel = latticeResult.union(resinModel).web('laser', moldGap, moldWallThickness)
         fixtureModel = fixtureModel.setMaterial(2)
         latticeResultMold = latticeResultMold.union(fixtureModel)
-    print('Fixture Generated')
+        print('Fixture Generated')
 
     # Save processed files
     if save:
@@ -115,5 +118,9 @@ if __name__=='__main__':
     if export:
         mesh1.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '_no_mold.stl')
         mesh2.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '.stl')
+
+    end = time.time()
+    processingTime = (end - start)
+    print("Processing time = %s" % processingTime)
 
     app1.exec_()
