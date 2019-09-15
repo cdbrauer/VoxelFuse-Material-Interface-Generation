@@ -16,10 +16,14 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     lattice_element_file = 'lattice_element_1m'
+
     mold = True
     moldWallThickness = 5
     moldGap = 2
-    export = False
+
+    save = False  # VF file for reopening
+    export = False # STL file for slicing
+    display = True # Show result in viewer
 
     min_radius = 1  # min radius that results in a printable structure (1,  7)
     max_radius = 6  # radius that results in a solid cube              (6, 25)
@@ -88,20 +92,28 @@ if __name__=='__main__':
         latticeResultMold = latticeResultMold.union(fixtureModel)
     print('Fixture Generated')
 
+    # Save processed files
+    if save:
+        latticeResult.saveVF(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '_no_mold')
+        latticeResultMold.saveVF(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z))
+
     # Create Mesh
-    mesh1 = Mesh.fromVoxelModel(latticeResult)
-    mesh2 = Mesh.fromVoxelModel(latticeResultMold)
-    print('Mesh Created')
+    if display or export:
+        mesh1 = Mesh.fromVoxelModel(latticeResult)
+        mesh2 = Mesh.fromVoxelModel(latticeResultMold)
+        print('Mesh Created')
 
     # Create Plot
-    plot1 = Plot(mesh1)
-    plot1.show()
-    plot2 = Plot(mesh2)
-    plot2.show()
-    app1.processEvents()
+    if display:
+        plot1 = Plot(mesh1)
+        plot1.show()
+        plot2 = Plot(mesh2)
+        plot2.show()
+        app1.processEvents()
 
+    # Create stl files
     if export:
-        mesh1.export(lattice_element_file + '_' + str(box_x) + 'x' + str(box_y) + 'x' + str(box_z * 2) + '_no_mold.stl')
-        mesh2.export(lattice_element_file + '_' + str(box_x) + 'x' + str(box_y) + 'x' + str(box_z * 2) + '.stl')
+        mesh1.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '_no_mold.stl')
+        mesh2.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '.stl')
 
     app1.exec_()
