@@ -21,9 +21,9 @@ if __name__=='__main__':
     moldWallThickness = 5
     moldGap = 2
 
-    save = False  # VF file for reopening
+    save = True  # VF file for reopening
     export = False # STL file for slicing
-    display = True # Show result in viewer
+    display = False # Show result in viewer
 
     min_radius = 1  # min radius that results in a printable structure (1,  7)
     max_radius = 6  # radius that results in a solid cube              (6, 25)
