@@ -37,7 +37,7 @@ if __name__=='__main__':
 
     # Import Models
     latticeModel = VoxelModel.fromVoxFile(lattice_element_file + '.vox')
-    lattice_size = len(latticeModel.voxels[0, 0, :])
+    lattice_size = latticeModel.voxels.shape[0]
     print('Lattice Element Imported')
 
     # Generate Base Model
@@ -95,6 +95,9 @@ if __name__=='__main__':
         latticeResultMold = latticeResultMold.union(fixtureModel)
         print('Fixture Generated')
 
+    end = time.time()
+    processingTime = (end - start)
+
     # Save processed files
     if save:
         latticeResult.saveVF(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '_no_mold')
@@ -119,8 +122,6 @@ if __name__=='__main__':
         mesh1.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '_no_mold.stl')
         mesh2.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '.stl')
 
-    end = time.time()
-    processingTime = (end - start)
     print("Processing time = %s" % processingTime)
 
     app1.exec_()

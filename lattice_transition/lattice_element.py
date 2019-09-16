@@ -20,7 +20,7 @@ if __name__=='__main__':
 
     # Import Models
     latticeModel = VoxelModel.fromVoxFile('lattice_element_1m.vox')
-    lattice_size = len(latticeModel.voxels[:, 0, 0])
+    lattice_size = latticeModel.voxels.shape[0]
 
     start = time.time()
 
