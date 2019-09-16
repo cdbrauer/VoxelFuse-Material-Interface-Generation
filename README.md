@@ -1,5 +1,5 @@
-# Lattice-Structure-Generation
-Examples of generating lattice structures using VoxelFuse
+# Material-Interface-Generation
+Examples of generating graded material transitions using VoxelFuse
 
 ## lattice_transition
 Demonstrates generating a graded transition between two materials using a lattice structure.
