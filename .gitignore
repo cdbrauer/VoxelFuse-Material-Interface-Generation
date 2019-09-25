@@ -110,4 +110,4 @@ venv.bak/
 *.ods#
 
 \.vscode/
-lattice_transition/lattice_element_1_20x1x1.*
+lattice_transition/lattice_element_1_*

@@ -7,6 +7,7 @@ Dan Aukes, Cole Brauer
 import PyQt5.QtGui as qg
 import sys
 import time
+from tqdm import tqdm
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
@@ -61,9 +62,7 @@ if __name__=='__main__':
     # Convert processed model to lattice
     latticeResult = VoxelModel.emptyLike(baseModel)
 
-    print('Lattice Structure Generation:')
-    for x in range(box_x * 2):
-        print(str(x) + '/' + str(box_x * 2))
+    for x in tqdm(range(box_x * 2), desc='Adding lattice elements'):
         for y in range(box_y):
             for z in range(box_z):
                 i = modelResult.voxels[x, y, z]
@@ -99,6 +98,7 @@ if __name__=='__main__':
 
     end = time.time()
     processingTime = (end - start)
+    print("Processing time = %s" % processingTime)
 
     # Save processed files
     if save:
@@ -123,7 +123,5 @@ if __name__=='__main__':
         if export:
             mesh1.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '_no_mold.stl')
             mesh2.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '.stl')
-
-    print("Processing time = %s" % processingTime)
 
     app1.exec_()
