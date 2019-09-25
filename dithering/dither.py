@@ -49,7 +49,7 @@ def toIndexedMaterials(voxels, model):
                     new_materials = np.vstack((new_materials, m))
                     new_voxels[x, y, z] = len(new_materials) - 1
 
-    return VoxelModel(new_voxels, new_materials, model.x, model.y, model.z)
+    return VoxelModel(new_voxels, new_materials, model.coords)
 
 @njit()
 def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len):

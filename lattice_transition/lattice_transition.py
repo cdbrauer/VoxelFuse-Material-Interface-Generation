@@ -24,7 +24,7 @@ if __name__=='__main__':
 
     save = True  # VF file for reopening
     export = False # STL file for slicing
-    display = False # Show result in viewer
+    display = True # Show result in viewer
 
     min_radius = 1  # min radius that results in a printable structure (1,  7)
     max_radius = 6  # radius that results in a solid cube              (6, 25)
@@ -73,9 +73,11 @@ if __name__=='__main__':
                 else:
                     r = 0
 
-                latticeElements[r].x = x * lattice_size
-                latticeElements[r].y = y * lattice_size
-                latticeElements[r].z = z * lattice_size
+                x_new = x * lattice_size
+                y_new = y * lattice_size
+                z_new = z * lattice_size
+
+                latticeElements[r].coords = (x_new, y_new, z_new)
 
                 latticeResult = latticeResult.union(latticeElements[r])
 
@@ -109,18 +111,18 @@ if __name__=='__main__':
         mesh2 = Mesh.fromVoxelModel(latticeResultMold)
         print('Mesh Created')
 
-    # Create Plot
-    if display:
-        plot1 = Plot(mesh1)
-        plot1.show()
-        plot2 = Plot(mesh2)
-        plot2.show()
-        app1.processEvents()
+        # Create Plot
+        if display:
+            plot1 = Plot(mesh1)
+            plot1.show()
+            plot2 = Plot(mesh2)
+            plot2.show()
+            app1.processEvents()
 
-    # Create stl files
-    if export:
-        mesh1.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '_no_mold.stl')
-        mesh2.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '.stl')
+        # Create stl files
+        if export:
+            mesh1.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '_no_mold.stl')
+            mesh2.export(lattice_element_file + '_' + str(box_x * 2) + 'x' + str(box_y) + 'x' + str(box_z) + '.stl')
 
     print("Processing time = %s" % processingTime)
 
