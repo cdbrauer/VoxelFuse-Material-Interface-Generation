@@ -141,15 +141,15 @@ def thin(model, max_iter):
     #struct2 = ndimage.generate_binary_structure(3, 2)
     struct3 = ndimage.generate_binary_structure(3, 3)
 
-    #boundaryDirections = np.array([[0,0,0], [2,0,0], [0,2,0], [0,0,2], [2,2,0], [2,0,2], [0,2,2], [2,2,2]])
-    boundaryDirections = np.array([[0,1,1], [1,0,1], [1,1,0], [2,1,1], [1,2,1], [1,1,2]])
+    boundaryDirections = np.array([[0,0,0], [2,0,0], [0,2,0], [0,0,2], [2,2,0], [2,0,2], [0,2,2], [2,2,2]])
+    #boundaryDirections = np.array([[0,1,1], [1,0,1], [1,1,0], [2,1,1], [1,2,1], [1,1,2]])
     numDirections = len(boundaryDirections)
 
-    for i in range(max_iter):
+    for i in tqdm(range(max_iter), desc='Thinning'):
         last_voxels = np.copy(new_voxels)
         deletions = 0
 
-        for x in tqdm(range(1,x_len-1), desc='Thinning pass '+str(i)):
+        for x in range(1,x_len-1): #, desc='Thinning pass '+str(i)):
             for y in range(1,y_len-1):
                 for z in range(1,z_len-1):
                     if last_voxels[x,y,z] != 0:
@@ -165,9 +165,9 @@ def thin(model, max_iter):
 
                         # Find D
                         d = boundaryDirections[i%numDirections]
-                        #D = n[d[0], 1, 1] + n[1, d[1], 1] + n[1, 1, d[2]] + n[d[0], d[1], 1] + n[1, d[1], d[2]] + n[d[0], 1, d[2]] + n[d[0], d[1], d[2]]
+                        D = n[d[0], 1, 1] + n[1, d[1], 1] + n[1, 1, d[2]] + n[d[0], d[1], 1] + n[1, d[1], d[2]] + n[d[0], 1, d[2]] + n[d[0], d[1], d[2]]
                         #D = D + n[1, 2-d[1], d[2]] + n[d[0], 2-d[1], 1] + n[d[0], 2-d[1], d[2]]
-                        D = n[d[0], d[1], d[2]]
+                        #D = n[d[0], d[1], d[2]]
 
                         # Apply conditions
                         if (C==1) and (N>=2) and (N<=4) and (D==0):
@@ -204,6 +204,9 @@ if __name__ == '__main__':
 
     result1 = result1.closing(2, Axes.XY)
     result1 = thin(result1, 5000)
+
+    # Save result
+    result1.saveVF('thin_model')
 
     # Create mesh
     ditherMesh = Mesh.fromVoxelModel(result1)
