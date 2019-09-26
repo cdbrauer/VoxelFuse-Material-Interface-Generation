@@ -145,11 +145,11 @@ def thin(model, max_iter):
     boundaryDirections = np.array([[0,1,1], [1,0,1], [1,1,0], [2,1,1], [1,2,1], [1,1,2]])
     numDirections = len(boundaryDirections)
 
-    for i in tqdm(range(max_iter), desc='Thinning'):
+    for i in range(max_iter):
         last_voxels = np.copy(new_voxels)
         deletions = 0
 
-        for x in range(1,x_len-1):
+        for x in tqdm(range(1,x_len-1), desc='Thinning pass '+str(i)):
             for y in range(1,y_len-1):
                 for z in range(1,z_len-1):
                     if last_voxels[x,y,z] != 0:
@@ -170,7 +170,7 @@ def thin(model, max_iter):
                         D = n[d[0], d[1], d[2]]
 
                         # Apply conditions
-                        if (C==1) and (N>=2) and (N<=3) and (D==0):
+                        if (C==1) and (N>=2) and (N<=4) and (D==0):
                             new_voxels[x, y, z] = 0
                             deletions = deletions + 1
 
@@ -193,18 +193,17 @@ if __name__ == '__main__':
     print('Model Created')
 
     # Process Model
-    #ditherResult = dither(baseModel, int(round(box_x/2)))
+    ditherResult = dither(baseModel, int(round(box_x/2)))
 
     # Scale result
-    #ditherResult = ditherResult.scale(5)
+    ditherResult = ditherResult.scale(5)
 
     # Isolate materials
-    #result1 = ditherResult.isolateMaterial(1)
-    #result2 = ditherResult.isolateMaterial(2)
+    result1 = ditherResult.isolateMaterial(1)
+    result2 = ditherResult.isolateMaterial(2)
 
-    #result1 = result1.closing(2, Axes.XY)
-    result1 = thin(baseModel, 5000)
-    result1 = result1.closing(2)
+    result1 = result1.closing(2, Axes.XY)
+    result1 = thin(result1, 5000)
 
     # Create mesh
     ditherMesh = Mesh.fromVoxelModel(result1)
