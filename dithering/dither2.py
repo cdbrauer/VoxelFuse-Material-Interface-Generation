@@ -10,6 +10,7 @@ from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.voxel_model import Axes
+from voxelfuse.voxel_model import Struct
 from voxelfuse_primitives.solid import Solid
 
 from numba import njit
@@ -129,6 +130,44 @@ def dither(model, radius=1):
 
     return toIndexedMaterials(full_model, model)
 
+def thin2(model, max_iter):
+    x_len = model.voxels.shape[0] + 2
+    y_len = model.voxels.shape[1] + 2
+    z_len = model.voxels.shape[2] + 2
+    struct3 = ndimage.generate_binary_structure(3, 3)
+
+    input_model = VoxelModel(np.zeros((x_len, y_len, z_len), dtype=np.int32), model.materials, model.coords)
+    input_model.voxels[1:-1, 1:-1, 1:-1] = model.voxels
+    new_model = VoxelModel.emptyLike(input_model)
+
+    for i in tqdm(range(max_iter), desc='Thinning'):
+        input_model = input_model.erode(1, plane=Axes.XYZ, structType=Struct.STANDARD, connectivity=3)
+
+        # Store voxels that mut be part of the center line
+        for x in range(1,x_len-1): #, desc='Thinning pass '+str(i)):
+            for y in range(1,y_len-1):
+                for z in range(1,z_len-1):
+                    if input_model.voxels[x,y,z] != 0:
+                        # Get matrix of neighbors
+                        n = np.copy(input_model.voxels[x-1:x+2, y-1:y+2, z-1:z+2])
+                        n[1,1,1] = 0
+                        n[n != 0] = 1
+
+                        # Find C
+                        C = ndimage.label(n, structure=struct3)[1]
+
+                        # Find N
+                        N = n[0,1,1] + n[1,0,1] + n[1,1,0] + n[2,1,1] + n[1,2,1] + n[1,1,2]
+
+                        # Apply conditions
+                        if (C>1) or (N==1):
+                            new_model.voxels[x, y, z] = input_model.voxels[x, y, z]
+
+        if np.sum(input_model.voxels) < 1:
+            break
+
+    return new_model
+
 def thin(model, max_iter):
     x_len = model.voxels.shape[0] + 2
     y_len = model.voxels.shape[1] + 2
@@ -193,20 +232,20 @@ if __name__ == '__main__':
     print('Model Created')
 
     # Process Model
-    ditherResult = dither(baseModel, int(round(box_x/2)))
+    #ditherResult = dither(baseModel, int(round(box_x/2)))
 
     # Scale result
-    ditherResult = ditherResult.scale(5)
+    #ditherResult = ditherResult.scale(5)
 
     # Isolate materials
-    result1 = ditherResult.isolateMaterial(1)
-    result2 = ditherResult.isolateMaterial(2)
+    #result1 = ditherResult.isolateMaterial(1)
+    #result2 = ditherResult.isolateMaterial(2)
 
-    result1 = result1.closing(2, Axes.XY)
-    result1 = thin(result1, 5000)
+    #result1 = result1.closing(2, Axes.XY)
+    result1 = thin2(baseModel, 20)
 
     # Save result
-    result1.saveVF('thin_model')
+    result1.saveVF('thin2')
 
     # Create mesh
     ditherMesh = Mesh.fromVoxelModel(result1)
