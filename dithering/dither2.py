@@ -154,35 +154,53 @@ def thin2(model, max_iter):
     new_model = VoxelModel.emptyLike(input_model)
 
     for i in tqdm(range(max_iter), desc='Thinning'):
+        # Find exterior voxels
+        interior_voxels = input_model.erode(radius=1, plane=Axes.XYZ, structType=Struct.STANDARD, connectivity=1)
+        exterior_voxels = input_model.difference(interior_voxels)
+
+        x_len = len(exterior_voxels.voxels[:, 0, 0])
+        y_len = len(exterior_voxels.voxels[0, :, 0])
+        z_len = len(exterior_voxels.voxels[0, 0, :])
+
+        # Create list of exterior voxel coordinates
+        exterior_coords = []
+        for x in range(x_len):
+            for y in range(y_len):
+                for z in range(z_len):
+                    if exterior_voxels.voxels[x, y, z] != 0:
+                        exterior_coords.append([x, y, z])
+
         # Store voxels that must be part of the center line
-        for x in range(2,x_len-2): #, desc='Thinning pass '+str(i)):
-            for y in range(2,y_len-2):
-                for z in range(2,z_len-2):
-                    if input_model.voxels[x,y,z] != 0:
-                        # Get matrix of neighbors
-                        n = np.copy(input_model.voxels[x - 2:x + 3, y - 2:y + 3, z - 2:z + 3])
-                        n[n != 0] = 1
+        for coords in exterior_coords:
+            x = coords[0]
+            y = coords[1]
+            z = coords[2]
 
-                        # Find V - number of voxels near current along xyz axes
-                        #Vx = np.sum(n[:, 2, 2])
-                        #Vy = np.sum(n[2, :, 2])
-                        #Vz = np.sum(n[2, 2, :])
+            if input_model.voxels[x,y,z] != 0:
+                # Get matrix of neighbors
+                n = np.copy(input_model.voxels[x - 2:x + 3, y - 2:y + 3, z - 2:z + 3])
+                n[n != 0] = 1
 
-                        # Subtract sphere
-                        n = n - sphere
-                        n[n < 1] = 0
+                # Find V - number of voxels near current along xyz axes
+                Vx = np.sum(n[:, 2, 2])
+                Vy = np.sum(n[2, :, 2])
+                Vz = np.sum(n[2, 2, :])
 
-                        # Check if subtraction split model
-                        C = ndimage.label(n, structure=struct)[1]
+                # Subtract sphere
+                n = n - sphere
+                n[n < 1] = 0
 
-                        # Apply conditions
-                        if (C > 1): #or (Vx <= 2) or (Vy <= 2) or (Vz <= 2):
-                            new_model.voxels[x, y, z] = input_model.voxels[x, y, z]
+                # Check if subtraction split model
+                C = ndimage.label(n, structure=struct)[1]
 
-        if np.sum(input_model.voxels) < 1:
+                # Apply conditions
+                if (C > 1) or (Vx <= 2) or (Vy <= 2) or (Vz <= 2):
+                    new_model.voxels[x, y, z] = input_model.voxels[x, y, z]
+
+        if np.sum(interior_voxels.voxels) < 1:
             break
-
-        input_model = input_model.erode(1, plane=Axes.XYZ, structType=Struct.STANDARD, connectivity=3)
+        else:
+            input_model = VoxelModel.copy(interior_voxels)
 
     return new_model
 

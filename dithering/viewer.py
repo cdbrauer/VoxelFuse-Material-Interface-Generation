@@ -17,8 +17,8 @@ if __name__=='__main__':
     export = False # STL file for slicing
 
     # Open File
-    file = 'thin2-4'
-    model = VoxelModel.openVF(file)#.dilate(1)
+    file = 'thin2-6'
+    model = VoxelModel.openVF(file).dilate(1)
     mesh = Mesh.fromVoxelModel(model)
 
     # Create Plot
