@@ -7,6 +7,7 @@ Dan Aukes, Cole Brauer
 import PyQt5.QtGui as qg
 import sys
 from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.voxel_model import Dir
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 
@@ -17,8 +18,8 @@ if __name__=='__main__':
     export = False # STL file for slicing
 
     # Open File
-    file = 'thin2-6'
-    model = VoxelModel.openVF(file).dilate(1)
+    file = 'thin2-6-hr-out'
+    model = VoxelModel.openVF(file).dilate(3).projection(Dir.BOTH)
     mesh = Mesh.fromVoxelModel(model)
 
     # Create Plot

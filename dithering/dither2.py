@@ -130,7 +130,7 @@ def dither(model, radius=1):
 
     return toIndexedMaterials(full_model, model)
 
-def thin2(model, max_iter):
+def thin(model, max_iter):
     x_len = model.voxels.shape[0] + 4
     y_len = model.voxels.shape[1] + 4
     z_len = model.voxels.shape[2] + 4
@@ -204,56 +204,6 @@ def thin2(model, max_iter):
 
     return new_model
 
-def thin(model, max_iter):
-    x_len = model.voxels.shape[0] + 2
-    y_len = model.voxels.shape[1] + 2
-    z_len = model.voxels.shape[2] + 2
-
-    new_voxels = np.zeros((x_len, y_len, z_len), dtype=np.int32)
-    new_voxels[1:-1, 1:-1, 1:-1] = model.voxels
-
-    #struct1 = ndimage.generate_binary_structure(3, 1)
-    #struct2 = ndimage.generate_binary_structure(3, 2)
-    struct3 = ndimage.generate_binary_structure(3, 3)
-
-    boundaryDirections = np.array([[0,0,0], [2,0,0], [0,2,0], [0,0,2], [2,2,0], [2,0,2], [0,2,2], [2,2,2]])
-    #boundaryDirections = np.array([[0,1,1], [1,0,1], [1,1,0], [2,1,1], [1,2,1], [1,1,2]])
-    numDirections = len(boundaryDirections)
-
-    for i in tqdm(range(max_iter), desc='Thinning'):
-        last_voxels = np.copy(new_voxels)
-        deletions = 0
-
-        for x in range(1,x_len-1): #, desc='Thinning pass '+str(i)):
-            for y in range(1,y_len-1):
-                for z in range(1,z_len-1):
-                    if last_voxels[x,y,z] != 0:
-                        n = np.copy(last_voxels[x-1:x+2, y-1:y+2, z-1:z+2])
-                        n[1,1,1] = 0
-                        n[n != 0] = 1
-
-                        # Find C
-                        C = ndimage.label(n, structure=struct3)[1]
-
-                        # Find N
-                        N = n[0,1,1] + n[1,0,1] + n[1,1,0] + n[2,1,1] + n[1,2,1] + n[1,1,2]
-
-                        # Find D
-                        d = boundaryDirections[i%numDirections]
-                        D = n[d[0], 1, 1] + n[1, d[1], 1] + n[1, 1, d[2]] + n[d[0], d[1], 1] + n[1, d[1], d[2]] + n[d[0], 1, d[2]] + n[d[0], d[1], d[2]]
-                        #D = D + n[1, 2-d[1], d[2]] + n[d[0], 2-d[1], 1] + n[d[0], 2-d[1], d[2]]
-                        #D = n[d[0], d[1], d[2]]
-
-                        # Apply conditions
-                        if (C==1) and (N>=2) and (N<=4) and (D==0):
-                            new_voxels[x, y, z] = 0
-                            deletions = deletions + 1
-
-        if deletions == 0 and (i%numDirections == numDirections-1):
-            break
-
-    return VoxelModel(new_voxels, model.materials, model.coords)
-
 if __name__ == '__main__':
     app1 = qg.QApplication(sys.argv)
 
@@ -271,17 +221,17 @@ if __name__ == '__main__':
     ditherResult = dither(result1, int(round(box_x/2)))
 
     # Scale result
-    ditherResult = ditherResult.scale(5)
+    ditherResult = ditherResult.scale(5) # 15
 
     # Isolate materials
     result1 = ditherResult.isolateMaterial(1)
     result2 = ditherResult.isolateMaterial(2)
 
-    result1 = result1.closing(2, Axes.XY)
-    result1 = thin2(result1, 50)#.dilate(1)
+    result1 = result1.closing(2, Axes.XY) # 7
+    result1 = thin(result1, 50) #100
 
     # Save result
-    result1.saveVF('thin2')
+    result1.saveVF('thin-test')
 
     # Create mesh
     ditherMesh = Mesh.fromVoxelModel(result1)
