@@ -202,6 +202,8 @@ def thin(model, max_iter):
         else:
             input_model = VoxelModel.copy(interior_voxels)
 
+    new_model = new_model.union(input_model)
+
     return new_model
 
 if __name__ == '__main__':
@@ -228,7 +230,7 @@ if __name__ == '__main__':
     result2 = ditherResult.isolateMaterial(2)
 
     result1 = result1.closing(2, Axes.XY) # 7
-    result1 = thin(result1, 50) #100
+    result1 = thin(result1, 3) #100
 
     # Save result
     result1.saveVF('thin-test')
