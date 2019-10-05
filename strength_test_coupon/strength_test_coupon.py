@@ -19,7 +19,7 @@ from voxelfuse.plot import Plot
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.voxel_model import Axes
 from voxelfuse.voxel_model import Struct
-from voxelfuse_primitives.solid import Solid
+from voxelfuse.primitives import *
 
 from numba import njit
 
@@ -219,17 +219,18 @@ if __name__=='__main__':
     stl = False
     highRes = False
 
-    blurRadius = 6
+    blurRadius = 4
+    inputScale = 2.5
     resultScale = 5
 
     blurEnable = False
-    ditherEnable = False
+    ditherEnable = True
     thinEnable = False
-    latticeEnable = True
+    latticeEnable = False
 
-    lattice_element_file = 'lattice_element_1m'
-    min_radius = 1  # min radius that results in a printable structure
-    max_radius = 4  # max radius that results in a viable lattice element
+    lattice_element_file = 'lattice_element_3_15x15'
+    min_radius = 0  # min radius that results in a printable structure
+    max_radius = 5  # max radius that results in a viable lattice element
 
     mold = False
     moldWallThickness = 2
@@ -263,23 +264,31 @@ if __name__=='__main__':
         center = center.setMaterial(2)
 
         # Combine components
-        coupon = VoxelModel.copy(end1.union(center.union(end2)))
+        coupon = end1 | center | end2
+
     else: # use vox file
-        coupon = VoxelModel.fromVoxFile('coupon.vox') # Should use materials 1 and 2 (red and green)
+        end1 = VoxelModel.fromVoxFile('coupon_end1.vox', (0, 0, 0)) # Should use materials 1 and 2 (red and green)
+        center = VoxelModel.fromVoxFile('coupon_center.vox', (113, 8, 0))
+        end2 = VoxelModel.fromVoxFile('coupon_end2.vox', (197, 0, 0))
+        coupon = end1 | center | end2
 
     start = time.time()
 
+    coupon = coupon.scale(round(resultScale/inputScale))
+
     if blurEnable: # Blur materials
         print('Blurring')
-        coupon = coupon.blur(blurRadius)
-        coupon = coupon.scaleValues()
-        coupon = coupon.scale(resultScale)
+        couponS = coupon.scale((1/resultScale), interpolate=True).dilate()
+        couponS = couponS.blur(blurRadius)
+        couponS = couponS.scaleValues()
+        coupon = couponS.scale(resultScale).intersection(coupon)
 
     elif ditherEnable: # Dither materials
         print('Dithering')
-        coupon = dither(coupon, blurRadius)
-        coupon = coupon.scaleValues()
-        coupon = coupon.scale(resultScale)
+        couponS = coupon.scale((1/resultScale), interpolate=True).dilate()
+        couponS = dither(couponS, blurRadius)
+        couponS = couponS.scaleValues()
+        coupon = couponS.scale(resultScale).intersection(coupon)
 
     elif latticeEnable:
         print('Lattice')
@@ -293,17 +302,15 @@ if __name__=='__main__':
         latticeElements = [VoxelModel.emptyLike(latticeModel)]
         for r in range(min_radius, max_radius+1):
             latticeElements.append(latticeModel.dilateBounded(r))
-        latticeElements.append(Solid.cube(latticeModel.voxels.shape[0]))
+        latticeElements.append(cube(latticeModel.voxels.shape[0]))
         print('Lattice Elements Generated')
 
         # Process Models
-        latticeLocations = coupon.blur(blurRadius)
+        latticeLocations = coupon.scale((1/lattice_size), interpolate=True).dilate()
+        latticeLocations = latticeLocations.blur(blurRadius*(resultScale/lattice_size))
+        latticeLocations = latticeLocations.scaleValues()
         latticeLocations = latticeLocations - latticeLocations.setMaterial(2)
         latticeLocations = latticeLocations.scaleNull()
-
-        coupon = coupon.scale(resultScale)
-        latticeLocations = latticeLocations.scale((resultScale/lattice_size), interpolate=True)
-        latticeLocations = latticeLocations.dilate(1)
         latticeLocations.coords = (0,0,0)
 
         box_x = latticeLocations.voxels.shape[0]
@@ -337,7 +344,7 @@ if __name__=='__main__':
         print('Lattice Structure Created')
 
         # Generate Resin Component
-        resinModel = Solid.cuboid(coupon.voxels.shape, material=2)
+        resinModel = cuboid(coupon.voxels.shape, material=2)
         resinModel = resinModel.intersection(coupon)
         resinModel = resinModel.difference(latticeResult)
         print('Resin Model Created')
@@ -345,10 +352,10 @@ if __name__=='__main__':
         coupon = latticeResult.union(resinModel)
 
     if ditherEnable and thinEnable:
-        coupon_ends = coupon.isolateMaterial(2)
-        coupon_center = coupon.isolateMaterial(1)
+        coupon_ends = coupon.isolateMaterial(1)
+        coupon_center = coupon.isolateMaterial(2)
 
-        coupon_ends = coupon_ends.closing(2, Axes.XY)
+        coupon_ends = coupon_ends.closing(round((resultScale/2)-1), Axes.XY)
         coupon_ends = thin(coupon_ends, int(resultScale/2)+1)
         coupon_ends = coupon_ends.dilate(1)
         coupon_ends = coupon_ends.dilate(resultScale, plane=Axes.Z)
