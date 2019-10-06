@@ -302,7 +302,7 @@ if __name__=='__main__':
         latticeElements = [VoxelModel.emptyLike(latticeModel)]
         for r in range(min_radius, max_radius+1):
             latticeElements.append(latticeModel.dilateBounded(r))
-        latticeElements.append(cube(latticeModel.voxels.shape[0]))
+        latticeElements.append(cuboid(latticeModel.voxels.shape))
         print('Lattice Elements Generated')
 
         # Process Models
@@ -327,7 +327,6 @@ if __name__=='__main__':
                 for z in range(box_z):
                     i = latticeLocations.voxels[x, y, z]
                     density =  latticeLocations.materials[i, 0] * (1 - latticeLocations.materials[i, 1])
-
                     r = min(int(density * len(latticeElements)), len(latticeElements) - 1)
 
                     x_new = x * lattice_size
