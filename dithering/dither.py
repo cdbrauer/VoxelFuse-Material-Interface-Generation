@@ -56,7 +56,7 @@ def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len):
         model[x, y, z, i] += error * constant * model[x, y, z, 0]
 
 @njit()
-def ditherOptimized(full_model):
+def ditherOptimized(full_model, use_full, x_error, y_error, z_error):
     x_len = full_model.shape[0]
     y_len = full_model.shape[1]
     z_len = full_model.shape[2]
@@ -78,41 +78,33 @@ def ditherOptimized(full_model):
 
                             error = old - full_model[x, y, z, i]
 
-                            # Original dither
-                            # addError(full_model, error, 3/10, i, x, y+1, z, x_len, y_len, z_len)
-                            # addError(full_model, error, 1/5, i, x+1, y+1, z, x_len, y_len, z_len)
-                            # addError(full_model, error, 1/5, i, x+1, y+1, z+1, x_len, y_len, z_len)
-                            # addError(full_model, error, 3/10, i, x+1, y, z, x_len, y_len, z_len)
+                            if use_full:
+                                # Based on Fundamentals of 3D Halftoning by Lou and Stucki
+                                addError(full_model, error, 4/21, i, x+1, y, z, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x+2, y, z, x_len, y_len, z_len)
 
-                            # New dither (based on Fundamentals of 3D Halftoning by Lou and Stucki)
-                            addError(full_model, error, 4/21, i, x+1, y, z, x_len, y_len, z_len)
-                            addError(full_model, error, 1/21, i, x+2, y, z, x_len, y_len, z_len)
+                                addError(full_model, error, 4/21, i, x, y+1, z, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x, y+2, z, x_len, y_len, z_len)
 
-                            addError(full_model, error, 4/21, i, x, y+1, z, x_len, y_len, z_len)
-                            addError(full_model, error, 1/21, i, x, y+2, z, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x+1, y+1, z, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x-1, y+1, z, x_len, y_len, z_len)
 
-                            addError(full_model, error, 1/21, i, x+1, y+1, z, x_len, y_len, z_len)
-                            addError(full_model, error, 1/21, i, x-1, y+1, z, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x, y-1, z+1, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x-1, y, z+1, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x, y+1, z+1, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x+1, y, z+1, x_len, y_len, z_len)
 
-                            addError(full_model, error, 1/21, i, x, y-1, z+1, x_len, y_len, z_len)
-                            addError(full_model, error, 1/21, i, x-1, y, z+1, x_len, y_len, z_len)
-                            addError(full_model, error, 1/21, i, x, y+1, z+1, x_len, y_len, z_len)
-                            addError(full_model, error, 1/21, i, x+1, y, z+1, x_len, y_len, z_len)
-
-                            addError(full_model, error, 4/21, i, x, y, z+1, x_len, y_len, z_len)
-                            addError(full_model, error, 1/21, i, x, y, z+2, x_len, y_len, z_len)
-
-                            # X-only
-                            # addError(full_model, error, 1/3, i, x+1, y, z, x_len, y_len, z_len)
-                            # Y-only
-                            # addError(full_model, error, 1/3, i, x, y+1, z, x_len, y_len, z_len)
-                            # Z-only
-                            # addError(full_model, error, 1/3, i, x, y, z+1, x_len, y_len, z_len)
+                                addError(full_model, error, 4/21, i, x, y, z+1, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x, y, z+2, x_len, y_len, z_len)
+                            else:
+                                addError(full_model, error, x_error, i, x+1, y, z, x_len, y_len, z_len)
+                                addError(full_model, error, y_error, i, x, y+1, z, x_len, y_len, z_len)
+                                addError(full_model, error, z_error, i, x, y, z+1, x_len, y_len, z_len)
 
     return full_model
 
 
-def dither(model, radius=1):
+def dither(model, radius=1, use_full=True, x_error=0, y_error=0, z_error=0):
     if radius == 0:
         return VoxelModel.copy(model)
 
@@ -124,7 +116,7 @@ def dither(model, radius=1):
     mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
     full_model = np.multiply(full_model, mask)
 
-    full_model = ditherOptimized(full_model)
+    full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error)
 
     return toIndexedMaterials(full_model, model)
 

@@ -104,7 +104,7 @@ if __name__ == '__main__':
     print('Model Created')
 
     # Process Model
-    ditherResult = dither(result1, int(round(box_x/2)))
+    ditherResult = dither(result1, int(round(box_x/2)), use_full=False, y_error=1/3)
 
     # Scale result
     ditherResult = ditherResult.scale(5) # 15
