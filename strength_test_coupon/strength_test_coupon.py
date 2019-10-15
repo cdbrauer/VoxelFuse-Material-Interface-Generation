@@ -5,23 +5,18 @@ Dan Aukes, Cole Brauer
 Generate coupon for tensile testing
 """
 
-import PyQt5.QtGui as qg
 import sys
 import time
 
-import numpy as np
+import PyQt5.QtGui as qg
+from numba import njit
 from scipy import ndimage
 from tqdm import tqdm
-
-from voxelfuse.materials import material_properties
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
-from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.primitives import *
 from voxelfuse.voxel_model import Axes
 from voxelfuse.voxel_model import Struct
-from voxelfuse.primitives import *
-
-from numba import njit
 
 @njit()
 def toFullMaterials(voxels, materials, n_materials):

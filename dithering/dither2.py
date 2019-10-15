@@ -8,10 +8,10 @@ from tqdm import tqdm
 from voxelfuse.materials import material_properties
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
+from voxelfuse.primitives import cuboid
 from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.voxel_model import Axes
 from voxelfuse.voxel_model import Struct
-from voxelfuse_primitives.solid import Solid
 
 from numba import njit
 
@@ -214,8 +214,8 @@ if __name__ == '__main__':
     box_z = 10
 
     # Create base model
-    box1 = Solid.cuboid((box_x, box_y, box_z), (0, 0, 0), 1)
-    box2 = Solid.cuboid((box_x, box_y, box_z), (box_x, 0, 0), 3)
+    box1 = cuboid((box_x, box_y, box_z), (0, 0, 0), 1)
+    box2 = cuboid((box_x, box_y, box_z), (box_x, 0, 0), 3)
     result1 = box1.union(box2)
     print('Model Created')
 

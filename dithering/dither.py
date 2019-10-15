@@ -7,9 +7,8 @@ from scipy import ndimage
 from voxelfuse.materials import material_properties
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
+from voxelfuse.primitives import cuboid
 from voxelfuse.voxel_model import VoxelModel
-
-from voxelfuse_primitives.solid import Solid
 
 from numba import njit
 
@@ -136,8 +135,8 @@ if __name__ == '__main__':
     box_y = 40
     box_z = 40
 
-    box1 = Solid.cuboid((box_x, box_y, box_z), (0, 0, 0), 1)
-    box2 = Solid.cuboid((box_x, box_y, box_z), (box_x, 0, 0), 3)
+    box1 = cuboid((box_x, box_y, box_z), (0, 0, 0), 1)
+    box2 = cuboid((box_x, box_y, box_z), (box_x, 0, 0), 3)
     baseModel = box1.union(box2)
     print('Model Created')
 
