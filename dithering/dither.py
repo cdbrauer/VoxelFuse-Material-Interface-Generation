@@ -2,7 +2,6 @@ import PyQt5.QtGui as qg
 import sys
 
 import numpy as np
-from scipy import ndimage
 
 from voxelfuse.materials import material_properties
 from voxelfuse.mesh import Mesh
@@ -51,21 +50,22 @@ def toIndexedMaterials(voxels, model):
     return VoxelModel(new_voxels, new_materials, model.coords)
 
 @njit()
-def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len):
-    if y < y_len and x < x_len and z < z_len:
+def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spread_threshold):
+    high = np.where(model[x, y, z, 1:] > error_spread_threshold)[0]
+    if y < y_len and x < x_len and z < z_len and len(high) == 0:
         model[x, y, z, i] += error * constant * model[x, y, z, 0]
 
 @njit()
-def ditherOptimized(full_model, use_full, x_error, y_error, z_error):
+def ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold):
     x_len = full_model.shape[0]
     y_len = full_model.shape[1]
     z_len = full_model.shape[2]
 
-    for x in range(x_len):
+    for z in range(z_len):
         for y in range(y_len):
-            for z in range(z_len):
+            for x in range(x_len):
                 voxel = full_model[x, y, z]
-                if voxel[0] > 0:
+                if voxel[0] == 1.0:
                     max_i = voxel[1:].argmax()+1
                     for i in range(1, len(voxel)):
                         if full_model[x, y, z, i] != 0:
@@ -80,43 +80,38 @@ def ditherOptimized(full_model, use_full, x_error, y_error, z_error):
 
                             if use_full:
                                 # Based on Fundamentals of 3D Halftoning by Lou and Stucki
-                                addError(full_model, error, 4/21, i, x+1, y, z, x_len, y_len, z_len)
-                                addError(full_model, error, 1/21, i, x+2, y, z, x_len, y_len, z_len)
+                                addError(full_model, error, 4/21, i, x+1, y, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x+2, y, z, x_len, y_len, z_len, error_spread_threshold)
 
-                                addError(full_model, error, 4/21, i, x, y+1, z, x_len, y_len, z_len)
-                                addError(full_model, error, 1/21, i, x, y+2, z, x_len, y_len, z_len)
+                                addError(full_model, error, 4/21, i, x, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y+2, z, x_len, y_len, z_len, error_spread_threshold)
 
-                                addError(full_model, error, 1/21, i, x+1, y+1, z, x_len, y_len, z_len)
-                                addError(full_model, error, 1/21, i, x-1, y+1, z, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x+1, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x-1, y+1, z, x_len, y_len, z_len, error_spread_threshold)
 
-                                addError(full_model, error, 1/21, i, x, y-1, z+1, x_len, y_len, z_len)
-                                addError(full_model, error, 1/21, i, x-1, y, z+1, x_len, y_len, z_len)
-                                addError(full_model, error, 1/21, i, x, y+1, z+1, x_len, y_len, z_len)
-                                addError(full_model, error, 1/21, i, x+1, y, z+1, x_len, y_len, z_len)
+                                addError(full_model, error, 1/21, i, x, y-1, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x-1, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y+1, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x+1, y, z+1, x_len, y_len, z_len, error_spread_threshold)
 
-                                addError(full_model, error, 4/21, i, x, y, z+1, x_len, y_len, z_len)
-                                addError(full_model, error, 1/21, i, x, y, z+2, x_len, y_len, z_len)
+                                addError(full_model, error, 4/21, i, x, y, z+1, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, 1/21, i, x, y, z+2, x_len, y_len, z_len, error_spread_threshold)
                             else:
-                                addError(full_model, error, x_error, i, x+1, y, z, x_len, y_len, z_len)
-                                addError(full_model, error, y_error, i, x, y+1, z, x_len, y_len, z_len)
-                                addError(full_model, error, z_error, i, x, y, z+1, x_len, y_len, z_len)
+                                addError(full_model, error, x_error, i, x+1, y, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, y_error, i, x, y+1, z, x_len, y_len, z_len, error_spread_threshold)
+                                addError(full_model, error, z_error, i, x, y, z+1, x_len, y_len, z_len, error_spread_threshold)
 
     return full_model
 
-
-def dither(model, radius=1, use_full=True, x_error=0, y_error=0, z_error=0):
+def dither(model, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8):
     if radius == 0:
         return VoxelModel.copy(model)
 
-    full_model = toFullMaterials(model.voxels, model.materials, len(material_properties)+1)
-    for m in range(len(material_properties)):
-        full_model[:, :, :, m+1] = ndimage.gaussian_filter(full_model[:, :, :, m+1], sigma=radius)
+    new_model = model.blur(radius)
+    new_model = new_model.scaleValues()
 
-    mask = full_model[:, :, :, 0]
-    mask = np.repeat(mask[..., None], len(material_properties)+1, axis=3)
-    full_model = np.multiply(full_model, mask)
-
-    full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error)
+    full_model = toFullMaterials(new_model.voxels, new_model.materials, len(material_properties)+1)
+    full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold)
 
     return toIndexedMaterials(full_model, model)
 
@@ -129,7 +124,8 @@ if __name__ == '__main__':
 
     box1 = cuboid((box_x, box_y, box_z), (0, 0, 0), 1)
     box2 = cuboid((box_x, box_y, box_z), (box_x, 0, 0), 3)
-    baseModel = box1.union(box2)
+    box3 = cuboid((box_x, box_y, box_z), (box_x*2, 0, 0), 1)
+    baseModel = box1 | box2 | box3
     print('Model Created')
 
     # Process Models
