@@ -12,6 +12,8 @@ import PyQt5.QtGui as qg
 from numba import njit
 from scipy import ndimage
 from tqdm import tqdm
+
+from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.primitives import *
@@ -23,16 +25,16 @@ from dithering.thin import thin
 
 if __name__=='__main__':
     # Settings
-    stl = False
-    highRes = False
+    stl = True
+    res = 2 # voxels per mm
+    coupon_standard = 'D638' # Start of stl file name
 
+    processing_res = 3 # voxels per processed voxel
     blurRadius = 4
-    inputScale = 2.5
-    resultScale = 5
 
     blurEnable = False
     ditherEnable = True
-    thinEnable = False
+    thinEnable = True
     latticeEnable = False
 
     lattice_element_file = 'lattice_element_3_15x15'
@@ -55,15 +57,11 @@ if __name__=='__main__':
     # Import coupon components
     print('Importing Files')
     if stl:
-        # TODO: Improve dimensional accuracy of stl model import and use these files instead of vox file
-        if highRes:
-            end1 = VoxelModel.fromMeshFile('end1x10.stl', (0, 0, 0))
-            center = VoxelModel.fromMeshFile('centerx10.stl', (670, 30, 0))
-            end2 = VoxelModel.fromMeshFile('end2x10.stl', (980, 0, 0))
-        else:
-            end1 = VoxelModel.fromMeshFile('end1.stl', (0, 0, 0))
-            center = VoxelModel.fromMeshFile('center.stl', (67, 3, 0))
-            end2 = VoxelModel.fromMeshFile('end2.stl', (98, 0, 0))
+        end1 = VoxelModel.fromMeshFile(coupon_standard + '-End.stl', (0, 0, 0), resolution=res).fitWorkspace()
+        center = VoxelModel.fromMeshFile(coupon_standard + '-Center.stl', (0, 0, 0), resolution=res).fitWorkspace()
+        end2 = end1.rotate90(2, axis=Axes.Z)
+        center.coords = (end1.voxels.shape[0], round((end1.voxels.shape[1] - center.voxels.shape[1]) / 2), 0)
+        end2.coords = (end1.voxels.shape[0] + center.voxels.shape[0], 0, 0)
 
         # Set materials
         end1 = end1.setMaterial(1)
@@ -81,21 +79,19 @@ if __name__=='__main__':
 
     start = time.time()
 
-    coupon = coupon.scale(round(resultScale/inputScale))
-
     if blurEnable: # Blur materials
         print('Blurring')
-        couponS = coupon.scale((1/resultScale), interpolate=True).dilate()
+        couponS = coupon.scale((1 / processing_res), interpolate=True).dilate()
         couponS = couponS.blur(blurRadius)
         couponS = couponS.scaleValues()
-        coupon = couponS.scale(resultScale).intersection(coupon)
+        coupon = couponS.scale(processing_res).intersection(coupon)
 
     elif ditherEnable: # Dither materials
         print('Dithering')
-        couponS = coupon.scale((1/resultScale), interpolate=True).dilate()
+        couponS = coupon.scale((1 / processing_res), interpolate=True).dilate()
         couponS = dither(couponS, blurRadius)
         couponS = couponS.scaleValues()
-        coupon = couponS.scale(resultScale).intersection(coupon)
+        coupon = couponS.scale(processing_res).intersection(coupon)
 
     elif latticeEnable:
         print('Lattice')
@@ -114,7 +110,7 @@ if __name__=='__main__':
 
         # Process Models
         latticeLocations = coupon.scale((1/lattice_size), interpolate=True).dilate()
-        latticeLocations = latticeLocations.blur(blurRadius*(resultScale/lattice_size))
+        latticeLocations = latticeLocations.blur(blurRadius * (processing_res / lattice_size))
         latticeLocations = latticeLocations.scaleValues()
         latticeLocations = latticeLocations - latticeLocations.setMaterial(2)
         latticeLocations = latticeLocations.scaleNull()
@@ -161,12 +157,12 @@ if __name__=='__main__':
         coupon_ends = coupon.isolateMaterial(1)
         coupon_center = coupon.isolateMaterial(2)
 
-        coupon_ends = coupon_ends.closing(round((resultScale/2)-1), Axes.XY)
-        coupon_ends = thin(coupon_ends, int(resultScale/2)+1)
+        coupon_ends = coupon_ends.closing(round((processing_res/2)-1), Axes.XY)
+        coupon_ends = thin(coupon_ends, int(processing_res/2)+1)
         coupon_ends = coupon_ends.dilate(1)
-        coupon_ends = coupon_ends.dilate(resultScale, plane=Axes.Z)
+        coupon_ends = coupon_ends.dilate(processing_res, plane=Axes.Z)
 
-        coupon_center = coupon_center.dilate(resultScale)
+        coupon_center = coupon_center.dilate(processing_res)
         coupon = coupon_ends.union(coupon_center).intersection(coupon)
 
     if mold: # Generate mold feature around material 2
