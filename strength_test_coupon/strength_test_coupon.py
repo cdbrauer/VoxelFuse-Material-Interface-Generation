@@ -30,11 +30,11 @@ if __name__=='__main__':
     coupon_standard = 'D638' # Start of stl file name
 
     processing_res = 3 # voxels per processed voxel
-    blurRadius = 4
+    blurRadius = 6
 
     blurEnable = False
     ditherEnable = True
-    thinEnable = True
+    thinEnable = False
     latticeEnable = False
 
     lattice_element_file = 'lattice_element_3_15x15'
@@ -199,7 +199,7 @@ if __name__=='__main__':
 
     # Create plot
     print('Plotting')
-    plot1 = Plot(mesh1, grids=False, drawEdges=True)
+    plot1 = Plot(mesh1, drawEdges=False, positionOffset = (70, 5, 0), viewAngle=(50, 40, 200), resolution=(720, 720), name=coupon_standard)
     plot1.show()
     app1.processEvents()
 
