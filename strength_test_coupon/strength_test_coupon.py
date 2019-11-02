@@ -9,16 +9,12 @@ import sys
 import time
 
 import PyQt5.QtGui as qg
-from numba import njit
-from scipy import ndimage
 from tqdm import tqdm
 
-from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.primitives import *
 from voxelfuse.voxel_model import Axes
-from voxelfuse.voxel_model import Struct
 
 from dithering.dither import dither
 from dithering.thin import thin

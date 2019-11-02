@@ -51,9 +51,10 @@ def toIndexedMaterials(voxels, model):
 
 @njit()
 def addError(model, error, constant, i, x, y, z, x_len, y_len, z_len, error_spread_threshold):
-    high = np.where(model[x, y, z, 1:] > error_spread_threshold)[0]
-    if y < y_len and x < x_len and z < z_len and len(high) == 0:
-        model[x, y, z, i] += error * constant * model[x, y, z, 0]
+    if y < y_len and x < x_len and z < z_len:
+        high = np.where(model[x, y, z, 1:] > error_spread_threshold)[0]
+        if len(high) == 0:
+            model[x, y, z, i] += error * constant * model[x, y, z, 0]
 
 @njit()
 def ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold):
