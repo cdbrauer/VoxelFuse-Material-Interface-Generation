@@ -89,7 +89,7 @@ if __name__=='__main__':
         print('Lattice')
 
         # Import Models
-        lattice_model = VoxelModel.fromVoxFile(lattice_element_file + '.vox')
+        lattice_model = VoxelModel.fromVoxFile("lattice_elements/" + lattice_element_file + '.vox')
         latticeSize = lattice_model.voxels.shape[0]
         print('Lattice Element Imported')
 

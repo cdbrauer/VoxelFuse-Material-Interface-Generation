@@ -53,8 +53,8 @@ if __name__=='__main__':
     # Import coupon components
     print('Importing Files')
     if stl:
-        end1 = VoxelModel.fromMeshFile(coupon_standard + '-End.stl', (0, 0, 0), resolution=res).fitWorkspace()
-        center = VoxelModel.fromMeshFile(coupon_standard + '-Center.stl', (0, 0, 0), resolution=res).fitWorkspace()
+        end1 = VoxelModel.fromMeshFile("coupon_templates/" + coupon_standard + '-End.stl', (0, 0, 0), resolution=res).fitWorkspace()
+        center = VoxelModel.fromMeshFile("coupon_templates/" + coupon_standard + '-Center.stl', (0, 0, 0), resolution=res).fitWorkspace()
         end2 = end1.rotate90(2, axis=Axes.Z)
         center.coords = (end1.voxels.shape[0], round((end1.voxels.shape[1] - center.voxels.shape[1]) / 2), 0)
         end2.coords = (end1.voxels.shape[0] + center.voxels.shape[0], 0, 0)
@@ -68,9 +68,9 @@ if __name__=='__main__':
         coupon = end1 | center | end2
 
     else: # use vox file
-        end1 = VoxelModel.fromVoxFile('coupon_end1.vox', (0, 0, 0)) # Should use materials 1 and 2 (red and green)
-        center = VoxelModel.fromVoxFile('coupon_center.vox', (113, 8, 0))
-        end2 = VoxelModel.fromVoxFile('coupon_end2.vox', (197, 0, 0))
+        end1 = VoxelModel.fromVoxFile('coupon_templates/coupon_end1.vox', (0, 0, 0)) # Should use materials 1 and 2 (red and green)
+        center = VoxelModel.fromVoxFile('coupon_templates/coupon_center.vox', (113, 8, 0))
+        end2 = VoxelModel.fromVoxFile('coupon_templates/coupon_end2.vox', (197, 0, 0))
         coupon = end1 | center | end2
 
     start = time.time()
@@ -93,7 +93,7 @@ if __name__=='__main__':
         print('Lattice')
 
         # Import Models
-        latticeModel = VoxelModel.fromVoxFile(lattice_element_file + '.vox')
+        latticeModel = VoxelModel.fromVoxFile("lattice_elements/" + lattice_element_file + '.vox')
         lattice_size = latticeModel.voxels.shape[0]
         print('Lattice Element Imported')
 
