@@ -31,7 +31,7 @@ if __name__=='__main__':
     couponStandard = 'D638' # Start of stl file name
 
     processingRes = 3 # voxels per processed voxel
-    blurRadius = 2*processingRes
+    blurRadius = round(18*(1/processingRes))
 
     blurEnable = False
     ditherEnable = True
