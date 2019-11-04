@@ -11,6 +11,7 @@ import time
 import PyQt5.QtGui as qg
 from tqdm import tqdm
 
+from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.primitives import *

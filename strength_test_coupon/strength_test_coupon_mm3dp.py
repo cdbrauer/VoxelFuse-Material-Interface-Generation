@@ -12,6 +12,7 @@ import time
 import PyQt5.QtGui as qg
 from tqdm import tqdm
 
+from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.primitives import *
@@ -23,24 +24,24 @@ from dithering.thin import thin
 if __name__=='__main__':
     # Settings
     stl = True
-    res = 2 # voxels per mm
+    res = 5 # voxels per mm
     couponStandard = 'D638' # Start of stl file name
 
-    processingRes = 3 # voxels per processed voxel
-    blurRadius = round(18*(1/processingRes))
+    processingRes = 4 # voxels per processed voxel
+    blurRadius = 6 # mm -- transition region width * 1/2
 
     blurEnable = False
-    ditherEnable = True
+    ditherEnable = False
     thinEnable = False
-    latticeEnable = False
+    latticeEnable = True
 
-    lattice_element_file = 'lattice_element_3_15x15'
+    lattice_element_file = 'lattice_element_1_15x15'
     min_radius = 0  # min radius that results in a printable structure
     max_radius = 5  # max radius that results in a viable lattice element
 
     materialDecimals = 2 # material resolution of final result
 
-    display = True
+    display = False
     save = False
     export = True
 
@@ -74,14 +75,14 @@ if __name__=='__main__':
     if blurEnable: # Blur materials
         print('Blurring')
         coupon_scaled = coupon.scale((1 / processingRes), interpolate=True).dilate()
-        coupon_scaled = coupon_scaled.blur(blurRadius)
+        coupon_scaled = coupon_scaled.blur(blurRadius*(res/processingRes))
         coupon_scaled = coupon_scaled.scaleValues()
         coupon = coupon_scaled.scale(processingRes).intersection(coupon)
 
     elif ditherEnable: # Dither materials
         print('Dithering')
         coupon_scaled = coupon.scale((1 / processingRes), interpolate=True).dilate()
-        coupon_scaled = dither(coupon_scaled, blurRadius)
+        coupon_scaled = dither(coupon_scaled, blurRadius*(res/processingRes)*3)
         coupon_scaled = coupon_scaled.scaleValues()
         coupon = coupon_scaled.scale(processingRes).intersection(coupon)
 
@@ -102,7 +103,7 @@ if __name__=='__main__':
 
         # Process Models
         latticeLocations = coupon.scale((1 / latticeSize), interpolate=True).dilate()
-        latticeLocations = latticeLocations.blur(blurRadius * (processingRes / latticeSize))
+        latticeLocations = latticeLocations.blur(blurRadius*(res/latticeSize)*2.5)
         latticeLocations = latticeLocations.scaleValues()
         latticeLocations = latticeLocations - latticeLocations.setMaterial(2)
         latticeLocations = latticeLocations.scaleNull()
@@ -171,7 +172,7 @@ if __name__=='__main__':
 
         # Create plot
         print('Plotting')
-        plot1 = Plot(mesh1, drawEdges=False, positionOffset = (35, 2, 0), viewAngle=(50, 40, 200), resolution=(720, 720), name=couponStandard)
+        plot1 = Plot(mesh1, drawEdges=True, positionOffset = (35, 2, 0), viewAngle=(50, 40, 200), resolution=(720, 720), name=couponStandard)
         plot1.show()
         app1.processEvents()
 
