@@ -35,11 +35,11 @@ if __name__=='__main__':
     ditherEnable = False
     latticeEnable = True
 
-    lattice_element_file = 'lattice_element_1_15x15'
-    min_radius = 0  # min radius that results in a printable structure
-    max_radius = 3  # max radius that results in a viable lattice element
+    lattice_element_file = 'lattice_element_3_15x15'
+    min_radius = 1  # 0/1 min radius that results in a printable structure
+    max_radius = 5  # 3/5 max radius that results in a viable lattice element
 
-    materialDecimals = 2 # material resolution of final result
+    materialDecimals = 1 # material resolution of final result
 
     display = True
     save = False
@@ -181,7 +181,7 @@ if __name__=='__main__':
         coupon = transition | coupon        # Add to result
 
     coupon.materials = np.round(coupon.materials, materialDecimals)
-    #coupon = coupon.removeDuplicateMaterials()
+    coupon = coupon.removeDuplicateMaterials()
 
     end = time.time()
     processingTime = (end - start)
