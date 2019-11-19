@@ -15,11 +15,11 @@ from voxelfuse.plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
-    min_radius = 1  # min radius that results in a printable structure    (1,  7)
-    max_radius = 4  # max radius that results in a viable lattice element (4, 22)
+    min_radius = 0  # min radius that results in a printable structure    (1,  7)
+    max_radius = 6  # max radius that results in a viable lattice element (4, 22)
 
     # Import Models
-    latticeModel = VoxelModel.fromVoxFile('lattice_element_1m.vox')
+    latticeModel = VoxelModel.fromVoxFile('lattice_element_3_15x15.vox')
     lattice_size = latticeModel.voxels.shape[0]
 
     start = time.time()
