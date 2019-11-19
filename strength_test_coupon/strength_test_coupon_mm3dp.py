@@ -8,6 +8,7 @@ Generate coupon for tensile testing
 import os
 import sys
 import time
+import math
 
 import PyQt5.QtGui as qg
 from tqdm import tqdm
@@ -32,12 +33,11 @@ if __name__=='__main__':
 
     blurEnable = False
     ditherEnable = False
-    thinEnable = False
     latticeEnable = True
 
     lattice_element_file = 'lattice_element_1_15x15'
     min_radius = 0  # min radius that results in a printable structure
-    max_radius = 4  # max radius that results in a viable lattice element
+    max_radius = 3  # max radius that results in a viable lattice element
 
     materialDecimals = 2 # material resolution of final result
 
@@ -99,6 +99,7 @@ if __name__=='__main__':
         print('Component #' + str(c+1))
         transition = coupon_input & (transition_regions.isolateComponent(c+1))
         transitionCenter = transition.getCenter()
+        transition = transition.fitWorkspace()
         print(transitionCenter)
 
         if blurEnable: # Blur materials
@@ -122,34 +123,52 @@ if __name__=='__main__':
         elif latticeEnable:
             print('Lattice')
 
-            # Process Models
-            latticeLocations = transition.scale((1 / latticeSize), interpolate=True).dilate()
-            latticeLocations = latticeLocations.blur(blurRadius*(res/latticeSize))
-            latticeLocations = latticeLocations.scaleValues()
-            latticeLocations = latticeLocations - latticeLocations.setMaterial(2)
-            latticeLocations = latticeLocations.scaleNull()
-            latticeLocations = latticeLocations.fitWorkspace()
-            latticeLocations.coords = (0, 0, 0)
+            boxX = math.ceil(transition.voxels.shape[0] / latticeSize)
+            boxY = math.ceil(transition.voxels.shape[1] / latticeSize)
+            boxZ = math.ceil(transition.voxels.shape[2] / latticeSize)
+            print([boxX, boxY, boxZ])
 
-            boxX = latticeLocations.voxels.shape[0]
-            boxY = latticeLocations.voxels.shape[1]
-            boxZ = latticeLocations.voxels.shape[2]
+            scaleX = (boxX * latticeSize) / transition.voxels.shape[0]
+            scaleY = (boxY * latticeSize) / transition.voxels.shape[1]
+            scaleZ = (boxZ * latticeSize) / transition.voxels.shape[2]
+            print([scaleX, scaleY, scaleZ])
+
+            maxScale = max([scaleX, scaleY, scaleZ])
+
+            # Process Models
+            lattice_locations_box = cuboid((boxX*latticeSize, boxY*latticeSize, boxZ*latticeSize)).setCenter((0, 0, 0))
+            lattice_locations_val = transition.scale(maxScale, interpolate=True).setCenter((0, 0, 0))
+            lattice_locations = lattice_locations_val & lattice_locations_box
+
+            lattice_locations = lattice_locations.scale((1/latticeSize), interpolate=True).setCoords((0, 0, 0))
+            lattice_locations = lattice_locations.blur(blurRadius*(res/latticeSize))
+            lattice_locations = lattice_locations.scaleValues()
+            lattice_locations = lattice_locations - lattice_locations.setMaterial(2)
+            lattice_locations = lattice_locations.scaleNull()
 
             # Convert processed model to lattice
-            lattice_result = VoxelModel.emptyLike(latticeLocations)
+            lattice_result = VoxelModel.emptyLike(lattice_locations)
 
             for x in tqdm(range(boxX), desc='Adding lattice elements'):
                 for y in range(boxY):
                     for z in range(boxZ):
-                        i = latticeLocations.voxels[x, y, z]
-                        density =  latticeLocations.materials[i, 0] * (1 - latticeLocations.materials[i, 1])
-                        r = min(int(density * len(lattice_elements)), len(lattice_elements) - 1)
+                        i = lattice_locations.voxels[x, y, z]
+                        density = lattice_locations.materials[i, 0] * (1 - lattice_locations.materials[i, 1])
 
-                        xNew = x * latticeSize
-                        yNew = y * latticeSize
-                        zNew = z * latticeSize
+                        if density < 1e-10:
+                            r = 0
+                        elif density > (1 - 1e-10):
+                            r = len(lattice_elements) - 1
+                        else:
+                            r = round(density * (len(lattice_elements) - 3)) + 1
 
-                        lattice_elements[r].coords = (xNew, yNew, zNew)
+                        r = int(r)
+
+                        x2 = (x * latticeSize)
+                        y2 = (y * latticeSize)
+                        z2 = (z * latticeSize)
+
+                        lattice_elements[r].coords = (x2, y2, z2)
 
                         lattice_result = lattice_result.union(lattice_elements[r])
 
@@ -171,7 +190,7 @@ if __name__=='__main__':
     if display:
         # Create mesh data
         print('Meshing')
-        mesh1 = Mesh.fromVoxelModel(lattice_result.setMaterial(3) | coupon, resolution=res)
+        mesh1 = Mesh.fromVoxelModel(coupon_input.difference(transition_regions).setMaterial(3) | coupon, resolution=res)
 
         # Create plot
         print('Plotting')
