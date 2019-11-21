@@ -31,9 +31,9 @@ if __name__=='__main__':
     processingRes = 4 # voxels per processed voxel
     blurRadius = 6 # mm -- transition region width * 1/2
 
-    blurEnable = False
+    blurEnable = True
     ditherEnable = False
-    latticeEnable = True
+    latticeEnable = False
 
     lattice_element_file = 'lattice_element_3_15x15'
     min_radius = 1  # 0/1 min radius that results in a printable structure
@@ -51,10 +51,18 @@ if __name__=='__main__':
     print('Importing Files')
     if stl:
         end1 = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-End.stl', (0, 0, 0), resolution=res).fitWorkspace()
-        center = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-Center.stl', (0, 0, 0), resolution=res).fitWorkspace()
+        center = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-Center-2.stl', (0, 0, 0), resolution=res).fitWorkspace()
         end2 = end1.rotate90(2, axis=Axes.Z)
         center.coords = (end1.voxels.shape[0], round((end1.voxels.shape[1] - center.voxels.shape[1]) / 2), 0)
         end2.coords = (end1.voxels.shape[0] + center.voxels.shape[0], 0, 0)
+
+        # Trim center
+        center_cross_section = VoxelModel(center.voxels[0:2, :, :], 3).fitWorkspace()
+        centerLength = center.voxels.shape[0]
+        centerWidth = center_cross_section.voxels.shape[1]
+        centerHeight = center_cross_section.voxels.shape[2]
+        centerCoordsOffset = (center.coords[0], center.coords[1] + round(((center.voxels.shape[1] - centerWidth) / 2)), center.coords[2])
+        center = cuboid((centerLength, centerWidth, centerHeight), centerCoordsOffset)
 
         # Set materials
         end1 = end1.setMaterial(1)
@@ -81,6 +89,8 @@ if __name__=='__main__':
     transition_regions = transition_regions.getComponents()
 
     # Generate lattice elements
+    latticeSize = None
+    lattice_elements = None
     if latticeEnable:
         # Import Models
         lattice_model = VoxelModel.fromVoxFile("lattice_elements/" + lattice_element_file + '.vox')
@@ -104,10 +114,10 @@ if __name__=='__main__':
 
         if blurEnable: # Blur materials
             print('Blurring')
-            transition_scaled = transition.scale((1 / processingRes), interpolate=True).dilate()    # Reduce to processing scale and dilate to compensate for rounding errors
-            transition_scaled = transition_scaled.blur(blurRadius*(res/processingRes))              # Apply blur
+            #transition_scaled = transition.scale((1 / processingRes), interpolate=True).dilate()   # Reduce to processing scale and dilate to compensate for rounding errors
+            transition_scaled = transition.blur(blurRadius*res) #/processingRes))                   # Apply blur
             transition_scaled = transition_scaled.scaleValues()                                     # Cleanup values
-            transition_scaled = transition_scaled.scale(processingRes)                              # Increase to original scale
+            #transition_scaled = transition_scaled.scale(processingRes)                             # Increase to original scale
             transition_scaled = transition_scaled.setCenter(transitionCenter)                       # Center processed model on target region
             transition = transition_scaled & transition                                             # Trim excess voxels
 
@@ -139,8 +149,8 @@ if __name__=='__main__':
             lattice_locations_box = cuboid((boxX*latticeSize, boxY*latticeSize, boxZ*latticeSize)).setCenter((0, 0, 0))
             lattice_locations_val = transition.scale(maxScale, interpolate=True).setCenter((0, 0, 0))
             lattice_locations = lattice_locations_val & lattice_locations_box
-
             lattice_locations = lattice_locations.scale((1/latticeSize), interpolate=True).setCoords((0, 0, 0))
+
             lattice_locations = lattice_locations.blur(blurRadius*(res/latticeSize))
             lattice_locations = lattice_locations.scaleValues()
             lattice_locations = lattice_locations - lattice_locations.setMaterial(2)
