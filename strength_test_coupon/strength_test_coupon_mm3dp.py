@@ -100,7 +100,7 @@ if __name__=='__main__':
         # Generate Dilated Lattice Elements
         lattice_elements = [VoxelModel.emptyLike(lattice_model)]
         for r in range(min_radius, max_radius + 1):
-            lattice_elements.append(lattice_model.dilateBounded(r))
+            lattice_elements.append(lattice_model.dilate(r))
         lattice_elements.append(cuboid(lattice_model.voxels.shape))
         print('Lattice Elements Generated')
 
@@ -174,11 +174,13 @@ if __name__=='__main__':
 
                         r = int(r)
 
-                        x2 = (x * latticeSize)
-                        y2 = (y * latticeSize)
-                        z2 = (z * latticeSize)
+                        locationOffset = round((lattice_elements[r].voxels.shape[0] - latticeSize) / 2)
 
-                        lattice_elements[r].coords = (x2, y2, z2)
+                        x2 = (x * latticeSize) - locationOffset
+                        y2 = (y * latticeSize) - locationOffset
+                        z2 = (z * latticeSize) - locationOffset
+
+                        lattice_elements[r].coords = (x2, y2, z2) # Do not use setCoords here
 
                         lattice_result = lattice_result.union(lattice_elements[r])
 

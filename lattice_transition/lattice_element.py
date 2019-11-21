@@ -19,7 +19,7 @@ if __name__=='__main__':
     max_radius = 6  # max radius that results in a viable lattice element (4, 22)
 
     # Import Models
-    latticeModel = VoxelModel.fromVoxFile('lattice_element_3_15x15.vox')
+    latticeModel = VoxelModel.fromVoxFile('lattice_element_1m.vox')
     lattice_size = latticeModel.voxels.shape[0]
 
     start = time.time()
