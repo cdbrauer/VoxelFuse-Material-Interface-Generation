@@ -17,6 +17,7 @@ from voxelfuse.voxel_model import VoxelModel
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
 from voxelfuse.primitives import *
+from voxelfuse.periodic import *
 from voxelfuse.voxel_model import Axes
 
 from dithering.dither import dither
@@ -31,19 +32,23 @@ if __name__=='__main__':
     processingRes = 4 # voxels per processed voxel
     blurRadius = 6 # mm -- transition region width * 1/2
 
-    blurEnable = True
-    ditherEnable = False
+    blurEnable = False
+    ditherEnable = True
     latticeEnable = False
+    gyroidEnable = False
 
-    lattice_element_file = 'lattice_element_3_15x15'
+    lattice_element_file = 'lattice_element_5_15x15'
     min_radius = 1  # 0/1 min radius that results in a printable structure
     max_radius = 5  # 3/5 max radius that results in a viable lattice element
+
+    gyroid_max_dilate = 2
+    gyroid_max_erode = 1
 
     materialDecimals = 1 # material resolution of final result
 
     display = True
     save = False
-    export = False
+    export = True
 
     app1 = qg.QApplication(sys.argv)
 
@@ -104,6 +109,22 @@ if __name__=='__main__':
         lattice_elements.append(cuboid(lattice_model.voxels.shape))
         print('Lattice Elements Generated')
 
+    elif gyroidEnable:
+        # Import Models
+        s = center.voxels.shape[2]
+        lattice_model_1, lattice_model_2 = FRD((s,s,s), s)
+        latticeSize = s
+        print('Lattice Element Imported')
+
+        # Generate Dilated Lattice Elements
+        lattice_elements = [VoxelModel.emptyLike(lattice_model_1)]
+        for r in range(0, gyroid_max_erode):
+            lattice_elements.append(lattice_model_1.difference(lattice_model_2.dilate(gyroid_max_erode - r)))
+        for r in range(0, gyroid_max_dilate+1):
+            lattice_elements.append(lattice_model_1.dilate(r))
+        lattice_elements.append(cuboid(lattice_model_1.voxels.shape))
+        print('Lattice Elements Generated')
+
     # Generate transitions
     for c in range(transition_regions.numComponents):
         print('Component #' + str(c+1))
@@ -130,7 +151,7 @@ if __name__=='__main__':
             transition_scaled = transition_scaled.setCenter(transitionCenter)                       # Center processed model on target region
             transition = transition_scaled & transition                                             # Trim excess voxels
 
-        elif latticeEnable:
+        elif latticeEnable or gyroidEnable:
             print('Lattice')
 
             boxX = math.ceil(transition.voxels.shape[0] / latticeSize)

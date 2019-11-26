@@ -18,13 +18,14 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     # Settings
-    a = 16                  # Scale (voxels/unit)
-    size = (50, 50, 16)     # Volume
+    a = 50                  # Scale (voxels/unit)
+    size = (50, 50, 50)     # Volume
 
-    #model = gyroid(size, a)
+    #model = gyroid(size, a),
     #model = schwarzP(size, a)
     #model = schwarzD(size, a)
-    model = FRD(size, a)
+    model1, model2 = FRD(size, a)
+    model = model1 | model2
 
     # Create Mesh
     mesh1 = Mesh.fromVoxelModel(model)
