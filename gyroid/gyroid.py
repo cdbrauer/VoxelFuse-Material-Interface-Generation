@@ -25,7 +25,7 @@ if __name__=='__main__':
     #model = schwarzP(size, a)
     #model = schwarzD(size, a)
     model1, model2 = FRD(size, a)
-    model = model1 | model2
+    model = model1 | model2.setCoords((60,0,0))
 
     # Create Mesh
     mesh1 = Mesh.fromVoxelModel(model)

@@ -48,7 +48,7 @@ if __name__=='__main__':
 
     display = True
     save = False
-    export = True
+    export = False
 
     app1 = qg.QApplication(sys.argv)
 
@@ -135,12 +135,10 @@ if __name__=='__main__':
 
         if blurEnable: # Blur materials
             print('Blurring')
-            #transition_scaled = transition.scale((1 / processingRes), interpolate=True).dilate()   # Reduce to processing scale and dilate to compensate for rounding errors
-            transition_scaled = transition.blur(blurRadius*res) #/processingRes))                   # Apply blur
-            transition_scaled = transition_scaled.scaleValues()                                     # Cleanup values
-            #transition_scaled = transition_scaled.scale(processingRes)                             # Increase to original scale
-            transition_scaled = transition_scaled.setCenter(transitionCenter)                       # Center processed model on target region
-            transition = transition_scaled & transition                                             # Trim excess voxels
+            transition_scaled = transition.blur(blurRadius*res)                 # Apply blur
+            transition_scaled = transition_scaled.scaleValues()                 # Cleanup values
+            transition_scaled = transition_scaled.setCenter(transitionCenter)   # Center processed model on target region
+            transition = transition_scaled & transition                         # Trim excess voxels
 
         elif ditherEnable: # Dither materials
             print('Dithering')
@@ -148,13 +146,13 @@ if __name__=='__main__':
             y_len = int(transition.voxels.shape[1])
             z_len = int(transition.voxels.shape[2])
 
-            transition_scaled = transition.blur(blurRadius*res)
-            transition_scaled = transition_scaled.scale((1 / processingRes))                        # Reduce to processing scale and dilate to compensate for rounding errors
-            transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False) # Apply Dither
-            transition_scaled = transition_scaled.scaleValues()                                     # Cleanup values
-            transition_scaled = transition_scaled.scaleToSize(x_len, y_len, z_len)                  # Increase to original scale
-            transition_scaled = transition_scaled.setCenter(transitionCenter)                       # Center processed model on target region
-            transition = transition_scaled & transition                                             # Trim excess voxels
+            transition_scaled = transition.blur(blurRadius*res*1.5)
+            transition_scaled = transition_scaled.scale((1 / processingRes))                            # Reduce to processing scale and dilate to compensate for rounding errors
+            transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False)   # Apply Dither
+            transition_scaled = transition_scaled.scaleValues()                                         # Cleanup values
+            transition_scaled = transition_scaled.scaleToSize(x_len, y_len, z_len)                      # Increase to original scale
+            transition_scaled = transition_scaled.setCenter(transitionCenter)                           # Center processed model on target region
+            transition = transition_scaled & transition                                                 # Trim excess voxels
 
         elif latticeEnable or gyroidEnable:
             print('Lattice')
