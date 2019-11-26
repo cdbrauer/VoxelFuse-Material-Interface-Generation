@@ -104,12 +104,15 @@ def ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_sprea
 
     return full_model
 
-def dither(model, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8):
+def dither(model, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True):
     if radius == 0:
         return VoxelModel.copy(model)
 
-    new_model = model.blur(radius)
-    new_model = new_model.scaleValues()
+    if blur:
+        new_model = model.blur(radius)
+        new_model = new_model.scaleValues()
+    else:
+        new_model = model.scaleValues()
 
     full_model = toFullMaterials(new_model.voxels, new_model.materials, len(material_properties)+1)
     full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold)

@@ -144,10 +144,15 @@ if __name__=='__main__':
 
         elif ditherEnable: # Dither materials
             print('Dithering')
-            transition_scaled = transition.scale((1 / processingRes), interpolate=True).dilate()    # Reduce to processing scale and dilate to compensate for rounding errors
-            transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes))           # Apply Dither
+            x_len = int(transition.voxels.shape[0])
+            y_len = int(transition.voxels.shape[1])
+            z_len = int(transition.voxels.shape[2])
+
+            transition_scaled = transition.blur(blurRadius*res)
+            transition_scaled = transition_scaled.scale((1 / processingRes))                        # Reduce to processing scale and dilate to compensate for rounding errors
+            transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False) # Apply Dither
             transition_scaled = transition_scaled.scaleValues()                                     # Cleanup values
-            transition_scaled = transition_scaled.scale(processingRes)                              # Increase to original scale
+            transition_scaled = transition_scaled.scaleToSize(x_len, y_len, z_len)                  # Increase to original scale
             transition_scaled = transition_scaled.setCenter(transitionCenter)                       # Center processed model on target region
             transition = transition_scaled & transition                                             # Trim excess voxels
 
@@ -159,19 +164,7 @@ if __name__=='__main__':
             boxZ = math.ceil(transition.voxels.shape[2] / latticeSize)
             print([boxX, boxY, boxZ])
 
-            scaleX = (boxX * latticeSize) / transition.voxels.shape[0]
-            scaleY = (boxY * latticeSize) / transition.voxels.shape[1]
-            scaleZ = (boxZ * latticeSize) / transition.voxels.shape[2]
-            print([scaleX, scaleY, scaleZ])
-
-            maxScale = max([scaleX, scaleY, scaleZ])
-
-            # Process Models
-            lattice_locations_box = cuboid((boxX*latticeSize, boxY*latticeSize, boxZ*latticeSize)).setCenter((0, 0, 0))
-            lattice_locations_val = transition.scale(maxScale, interpolate=True).setCenter((0, 0, 0))
-            lattice_locations = lattice_locations_val & lattice_locations_box
-            lattice_locations = lattice_locations.scale((1/latticeSize), interpolate=True).setCoords((0, 0, 0))
-
+            lattice_locations = transition.scaleToSize(boxX, boxY, boxZ)
             lattice_locations = lattice_locations.blur(blurRadius*(res/latticeSize))
             lattice_locations = lattice_locations.scaleValues()
             lattice_locations = lattice_locations - lattice_locations.setMaterial(2)

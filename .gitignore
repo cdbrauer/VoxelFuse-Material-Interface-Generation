@@ -111,3 +111,4 @@ venv.bak/
 
 \.vscode/
 lattice_transition/lattice_element_1_*
+/strength_test_coupon/stl_output/
