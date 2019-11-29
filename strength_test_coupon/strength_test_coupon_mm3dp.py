@@ -33,9 +33,9 @@ if __name__=='__main__':
     blurRadius = 6 # mm -- transition region width * 1/2
 
     blurEnable = False
-    ditherEnable = True
+    ditherEnable = False
     latticeEnable = False
-    gyroidEnable = False
+    gyroidEnable = True
 
     lattice_element_file = 'lattice_element_5_15x15'
     min_radius = 1  # 0/1 min radius that results in a printable structure
@@ -112,7 +112,7 @@ if __name__=='__main__':
     elif gyroidEnable:
         # Import Models
         s = center.voxels.shape[2]
-        lattice_model_1, lattice_model_2 = FRD((s,s,s), s)
+        lattice_model_1, lattice_model_2 = schwarzD((s,s,s), s)
         latticeSize = s
         print('Lattice Element Imported')
 
@@ -148,7 +148,9 @@ if __name__=='__main__':
 
             transition_scaled = transition.blur(blurRadius*res*1.5)
             transition_scaled = transition_scaled.scale((1 / processingRes))                            # Reduce to processing scale and dilate to compensate for rounding errors
-            transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False)   # Apply Dither
+            # transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False)   # Apply Dither
+            # transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8)   # Apply Dither
+            transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8, x_error=0.8)   # Apply Dither
             transition_scaled = transition_scaled.scaleValues()                                         # Cleanup values
             transition_scaled = transition_scaled.scaleToSize(x_len, y_len, z_len)                      # Increase to original scale
             transition_scaled = transition_scaled.setCenter(transitionCenter)                           # Center processed model on target region
