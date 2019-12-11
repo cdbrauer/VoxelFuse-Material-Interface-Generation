@@ -32,10 +32,10 @@ if __name__=='__main__':
     processingRes = 4 # voxels per processed voxel
     blurRadius = 6 # mm -- transition region width * 1/2
 
-    blurEnable = False
+    blurEnable = True
     ditherEnable = False
     latticeEnable = False
-    gyroidEnable = True
+    gyroidEnable = False
 
     lattice_element_file = 'lattice_element_5_15x15'
     min_radius = 1  # 0/1 min radius that results in a printable structure
@@ -44,7 +44,7 @@ if __name__=='__main__':
     gyroid_max_dilate = 2
     gyroid_max_erode = 1
 
-    materialDecimals = 1 # material resolution of final result
+    materialStep = 0.2 # material step size of final result
 
     display = True
     save = False
@@ -206,7 +206,7 @@ if __name__=='__main__':
         transition = transition & coupon    # Trim excess voxels
         coupon = transition | coupon        # Add to result
 
-    coupon.materials = np.round(coupon.materials, materialDecimals)
+    coupon = coupon.round(materialStep)
     coupon = coupon.removeDuplicateMaterials()
 
     end = time.time()

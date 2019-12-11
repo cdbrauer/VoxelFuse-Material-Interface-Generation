@@ -21,7 +21,7 @@ if __name__=='__main__':
     cleanup = False # Remove duplicate materials and save file
 
     # Open File
-    file = 'output-blur'
+    file = 'stl_files_v3_combined/output-zz5'
     model = VoxelModel.openVF(file)
 
     # Cleanup operations
