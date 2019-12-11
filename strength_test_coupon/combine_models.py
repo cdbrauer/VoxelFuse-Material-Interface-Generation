@@ -24,7 +24,7 @@ if __name__=='__main__':
 
     # Open Files
     outputFile = 'output-combined'
-    files = ['output-control', 'output-blur6', 'output-dither', 'output-dither2', 'output-gyroid', 'output-schwarzp', 'output-schwarzd', 'output-plus', 'output-cross', 'output-zz4', 'output-zz5']
+    files = ['output-control', 'output-blur6', 'output-dither', 'output-dither2', 'output-gyroid', 'output-schwarzp', 'output-schwarzd', 'output-plus', 'output-cross', 'output-zz4-2', 'output-zz5']
 
     model = VoxelModel.emptyLike(cube(1))
     for i in range(len(files)):

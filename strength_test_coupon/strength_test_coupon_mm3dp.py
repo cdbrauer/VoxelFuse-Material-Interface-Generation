@@ -32,14 +32,14 @@ if __name__=='__main__':
     processingRes = 4 # voxels per processed voxel
     blurRadius = 6 # mm -- transition region width * 1/2
 
-    blurEnable = True
+    blurEnable = False
     ditherEnable = False
-    latticeEnable = False
+    latticeEnable = True
     gyroidEnable = False
 
-    lattice_element_file = 'lattice_element_5_15x15'
-    min_radius = 1  # 0/1 min radius that results in a printable structure
-    max_radius = 5  # 3/5 max radius that results in a viable lattice element
+    lattice_element_file = 'lattice_element_4_15x15'
+    min_radius = 0  # 0/1 min radius that results in a printable structure
+    max_radius = 2  # 3/5 max radius that results in a viable lattice element
 
     gyroid_max_dilate = 2
     gyroid_max_erode = 1
