@@ -25,7 +25,6 @@ from dithering.thin import thin
 
 if __name__=='__main__':
     # Settings
-    stl = True
     res = 5 # voxels per mm
     couponStandard = 'D638' # Start of stl file name
 
@@ -46,6 +45,8 @@ if __name__=='__main__':
 
     materialStep = 0.2 # material step size of final result
 
+    centerLengthScale = 1.3 # transition length scale multiplier
+
     display = True
     save = False
     export = False
@@ -54,34 +55,37 @@ if __name__=='__main__':
 
     # Import coupon components
     print('Importing Files')
-    if stl:
-        end1 = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-End.stl', (0, 0, 0), resolution=res).fitWorkspace()
-        center = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-Center-2.stl', (0, 0, 0), resolution=res).fitWorkspace()
-        end2 = end1.rotate90(2, axis=Axes.Z)
-        center.coords = (end1.voxels.shape[0], round((end1.voxels.shape[1] - center.voxels.shape[1]) / 2), 0)
-        end2.coords = (end1.voxels.shape[0] + center.voxels.shape[0], 0, 0)
+    end1 = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-End.stl', (0, 0, 0), resolution=res).fitWorkspace()
+    center = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-Center-2.stl', (0, 0, 0), resolution=res).fitWorkspace()
+    end2 = end1.rotate90(2, axis=Axes.Z)
+    center.coords = (end1.voxels.shape[0], round((end1.voxels.shape[1] - center.voxels.shape[1]) / 2), 0)
+    end2.coords = (end1.voxels.shape[0] + center.voxels.shape[0], 0, 0)
 
-        # Trim center
-        center_cross_section = VoxelModel(center.voxels[0:2, :, :], 3).fitWorkspace()
-        centerLength = center.voxels.shape[0]
-        centerWidth = center_cross_section.voxels.shape[1]
-        centerHeight = center_cross_section.voxels.shape[2]
-        centerCoordsOffset = (center.coords[0], center.coords[1] + round(((center.voxels.shape[1] - centerWidth) / 2)), center.coords[2])
-        center = cuboid((centerLength, centerWidth, centerHeight), centerCoordsOffset)
+    # Trim center
+    center_cross_section = VoxelModel(center.voxels[0:2, :, :], 3).fitWorkspace()
+    centerLength = center.voxels.shape[0]
+    centerWidth = center_cross_section.voxels.shape[1]
+    centerHeight = center_cross_section.voxels.shape[2]
 
-        # Set materials
-        end1 = end1.setMaterial(1)
-        end2 = end2.setMaterial(1)
-        center = center.setMaterial(2)
+    centerCoordsOffset = (
+    center.coords[0], center.coords[1] + round(((center.voxels.shape[1] - centerWidth) / 2)), center.coords[2])
+    center = cuboid((centerLength, centerWidth, centerHeight), centerCoordsOffset)
 
-        # Combine components
-        coupon = end1 | center | end2
+    # Set materials
+    end1 = end1.setMaterial(1)
+    end2 = end2.setMaterial(1)
+    center = center.setMaterial(2)
 
-    else: # use vox file
-        end1 = VoxelModel.fromVoxFile('coupon_templates/' + 'coupon_end1.vox', (0, 0, 0)) # Should use materials 1 and 2 (red and green)
-        center = VoxelModel.fromVoxFile('coupon_templates/' + 'coupon_center.vox', (113, 8, 0))
-        end2 = VoxelModel.fromVoxFile('coupon_templates/' + 'coupon_end2.vox', (197, 0, 0))
-        coupon = end1 | center | end2
+    # Combine components
+    coupon = end1 | center | end2
+    coupon = coupon.setMaterial(1)
+
+    # Scaled center
+    newCenterLength = round(centerLength * centerLengthScale)
+    centerCoordsOffset = (center.coords[0] + round((centerLength - newCenterLength) / 2), center.coords[1], center.coords[2])
+    center = cuboid((newCenterLength, centerWidth, centerHeight), centerCoordsOffset)
+    center = center.setMaterial(2)
+    coupon = center | coupon
 
     coupon_input = VoxelModel.copy(coupon)
 
@@ -89,7 +93,7 @@ if __name__=='__main__':
 
     # Generate transition regions
     transition_1 = cuboid((blurRadius * res * 2, coupon.voxels.shape[1], coupon.voxels.shape[2]), (center.coords[0] - (blurRadius * res), 0, 0), 3)
-    transition_2 = cuboid((blurRadius * res * 2, coupon.voxels.shape[1], coupon.voxels.shape[2]), (end2.coords[0] - (blurRadius * res), 0, 0), 3)
+    transition_2 = cuboid((blurRadius * res * 2, coupon.voxels.shape[1], coupon.voxels.shape[2]), (center.coords[0] - (blurRadius * res) + newCenterLength, 0, 0), 3)
     transition_regions = transition_1 | transition_2
     transition_regions = transition_regions.getComponents()
 
