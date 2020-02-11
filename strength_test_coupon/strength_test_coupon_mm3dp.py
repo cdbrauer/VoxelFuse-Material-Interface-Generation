@@ -1,5 +1,5 @@
 """
-Copyright 2018
+Copyright 2018-2020
 Dan Aukes, Cole Brauer
 
 Generate coupon for tensile testing
@@ -45,7 +45,7 @@ if __name__=='__main__':
 
     materialStep = 0.2 # material step size of final result
 
-    centerLengthScale = 1.3 # transition length scale multiplier
+    centerLengthScale = 1.1963 # transition length scale multiplier
 
     display = True
     save = False
