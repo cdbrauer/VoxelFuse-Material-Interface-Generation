@@ -23,12 +23,13 @@ if __name__=='__main__':
     export = True # STL file for slicing
 
     # Open Files
-    outputFile = 'output-combined'
-    files = ['output-control', 'output-blur', 'output-dither3D', 'output-dither2D', 'output-gyroid', 'output-schwarzp', 'output-schwarzd', 'output-plus', 'output-cross', 'output-zz4', 'output-zz5']
+    outputFolder = 'stl_files_v4.1_combined/'
+    outputFile = 'output_combined'
+    files = ['output_A', 'output_B', 'output_C', 'output_D', 'output_E', 'output_F', 'output_G', 'output_H', 'output_I', 'output_J', 'output_K']
 
     model = VoxelModel.emptyLike(cube(1))
     for i in range(len(files)):
-        new_model = VoxelModel.openVF('stl_files_v4_combined/' + files[i])
+        new_model = VoxelModel.openVF(outputFolder + files[i])
         new_model = new_model.setCoords((0, i*110, 0))
         model = model | new_model
 
@@ -36,13 +37,13 @@ if __name__=='__main__':
     if cleanup:
         model.materials = np.round(model.materials, 1)
         model = model.removeDuplicateMaterials()
-        model.saveVF(outputFile)
+        model.saveVF(outputFolder + outputFile)
 
     # Create stl files
     if export:
         for m in range(1, len(model.materials)):
             mesh = Mesh.fromVoxelModel(model.isolateMaterial(m), resolution=res)
-            mesh.export(('stl_files_v4_combined/' + str(m) + '_' + couponStandard + '_A.stl'))
+            mesh.export((outputFolder + str(m) + '_' + couponStandard + '_A.stl'))
 
     if display:
         mesh = Mesh.fromVoxelModel(model)
