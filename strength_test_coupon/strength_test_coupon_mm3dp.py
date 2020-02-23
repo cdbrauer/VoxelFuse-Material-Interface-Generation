@@ -24,7 +24,7 @@ from voxelfuse.voxel_model import Axes
 from dithering.dither import dither
 from dithering.thin import thin
 
-configIDs = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+configIDs = ['K'] #['A', 'B', 'C', 'D', 'E', 'F', 'G, 'H', 'I', 'J', 'K']
 
 # Set desired outputs
 display = False
