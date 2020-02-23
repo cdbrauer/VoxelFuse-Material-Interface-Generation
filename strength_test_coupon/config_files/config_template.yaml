@@ -1,0 +1,28 @@
+# Config template
+
+filename: 'template'
+
+res: 5
+couponStandard: D638
+centerLengthScale: 1.0000 # transition length scale multiplier
+blurRadius: 6 # mm -- transition region width * 1/2
+materialStep: 0.2 # material step size of final result
+
+blurEnable: False
+ditherEnable: False
+latticeEnable: False
+gyroidEnable: False
+
+ditherType: 1 # 1 - xyz, 2 - xy, 3 - y
+processingRes: 4 # voxels per processed voxel
+
+latticeElementFile: 'lattice_element_4_15x15'
+minRadius: 0 # 0/1 min radius that results in a printable structure
+maxRadius: 2 # 3/5 max radius that results in a viable lattice element
+
+gyroidType: 1 # 1 - gyroid, 2 - p-surface, 3 - d-surface, 4 - FRD
+gyroidMaxDilate: 2
+gyroidMaxErode: 1
+
+
+

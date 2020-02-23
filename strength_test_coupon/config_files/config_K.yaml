@@ -1,0 +1,18 @@
+# K - large fibers
+
+filename: 'K'
+
+res: 5
+couponStandard: D638
+centerLengthScale: 1.1575 # transition length scale multiplier
+blurRadius: 6 # mm -- transition region width * 1/2
+materialStep: 0.2 # material step size of final result
+
+latticeEnable: True
+
+latticeElementFile: 'lattice_element_4_15x15'
+minRadius: 0 # 0/1 min radius that results in a printable structure
+maxRadius: 2 # 3/5 max radius that results in a viable lattice element
+
+
+

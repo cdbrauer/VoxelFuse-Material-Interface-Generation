@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import math
+import yaml
 
 import PyQt5.QtGui as qg
 from tqdm import tqdm
@@ -23,228 +24,266 @@ from voxelfuse.voxel_model import Axes
 from dithering.dither import dither
 from dithering.thin import thin
 
+configIDs = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+
+# Set desired outputs
+display = False
+save = True
+export = True
+
+outputFolder = 'stl_files_v4.1_combined'
+
 if __name__=='__main__':
-    # Settings
-    res = 5 # voxels per mm
-    couponStandard = 'D638' # Start of stl file name
+    for configID in configIDs:
+        # Load config
+        with open("config_files/config_" + configID + ".yaml", 'r') as f:
+            try:
+                config = yaml.safe_load(f)
+            except yaml.YAMLError as exc:
+                print(exc)
 
-    processingRes = 4 # voxels per processed voxel
-    blurRadius = 6 # mm -- transition region width * 1/2
+        # Load settings
+        filename = config.get('filename')
+        res = config.get('res') # voxels per mm
+        couponStandard = config.get('couponStandard') # Start of stl file name
+        centerLengthScale = config.get('centerLengthScale') # transition length scale multiplier
+        blurRadius = config.get('blurRadius') # mm -- transition region width * 1/2
+        materialStep = config.get('materialStep')  # material step size of final result
 
-    blurEnable = False
-    ditherEnable = False
-    latticeEnable = True
-    gyroidEnable = False
+        blurEnable = config.get('blurEnable', False)
+        ditherEnable = config.get('ditherEnable', False)
+        latticeEnable = config.get('latticeEnable', False)
+        gyroidEnable = config.get('gyroidEnable', False)
 
-    lattice_element_file = 'lattice_element_4_15x15'
-    min_radius = 0  # 0/1 min radius that results in a printable structure
-    max_radius = 2  # 3/5 max radius that results in a viable lattice element
+        if ditherEnable:
+            ditherType = config.get('ditherType')
+            processingRes = config.get('processingRes') # voxels per processed voxel
 
-    gyroid_max_dilate = 2
-    gyroid_max_erode = 1
+        if latticeEnable:
+            latticeElementFile = config.get('latticeElementFile')
+            minRadius = config.get('minRadius')  # 0/1 min radius that results in a printable structure
+            maxRadius = config.get('maxRadius')  # 3/5 max radius that results in a viable lattice element
 
-    materialStep = 0.2 # material step size of final result
+        if gyroidEnable:
+            gyroidType = config.get('gyroidType')
+            gyroidMaxDilate = config.get('gyroidMaxDilate')
+            gyroidMaxErode = config.get('gyroidMaxErode')
 
-    centerLengthScale = 1.1963 # transition length scale multiplier
+        app1 = qg.QApplication(sys.argv)
 
-    display = True
-    save = False
-    export = False
+        # Import coupon components
+        print('Importing Files')
+        end1 = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-End.stl', (0, 0, 0), resolution=res).fitWorkspace()
+        center = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-Center-2.stl', (0, 0, 0), resolution=res).fitWorkspace()
+        end2 = end1.rotate90(2, axis=Axes.Z)
+        center.coords = (end1.voxels.shape[0], round((end1.voxels.shape[1] - center.voxels.shape[1]) / 2), 0)
+        end2.coords = (end1.voxels.shape[0] + center.voxels.shape[0], 0, 0)
 
-    app1 = qg.QApplication(sys.argv)
+        # Trim center
+        center_cross_section = VoxelModel(center.voxels[0:2, :, :], 3).fitWorkspace()
+        centerLength = center.voxels.shape[0]
+        centerWidth = center_cross_section.voxels.shape[1]
+        centerHeight = center_cross_section.voxels.shape[2]
 
-    # Import coupon components
-    print('Importing Files')
-    end1 = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-End.stl', (0, 0, 0), resolution=res).fitWorkspace()
-    center = VoxelModel.fromMeshFile('coupon_templates/' + couponStandard + '-Center-2.stl', (0, 0, 0), resolution=res).fitWorkspace()
-    end2 = end1.rotate90(2, axis=Axes.Z)
-    center.coords = (end1.voxels.shape[0], round((end1.voxels.shape[1] - center.voxels.shape[1]) / 2), 0)
-    end2.coords = (end1.voxels.shape[0] + center.voxels.shape[0], 0, 0)
+        centerCoordsOffset = (
+        center.coords[0], center.coords[1] + round(((center.voxels.shape[1] - centerWidth) / 2)), center.coords[2])
+        center = cuboid((centerLength, centerWidth, centerHeight), centerCoordsOffset)
 
-    # Trim center
-    center_cross_section = VoxelModel(center.voxels[0:2, :, :], 3).fitWorkspace()
-    centerLength = center.voxels.shape[0]
-    centerWidth = center_cross_section.voxels.shape[1]
-    centerHeight = center_cross_section.voxels.shape[2]
+        # Set materials
+        end1 = end1.setMaterial(1)
+        end2 = end2.setMaterial(1)
+        center = center.setMaterial(2)
 
-    centerCoordsOffset = (
-    center.coords[0], center.coords[1] + round(((center.voxels.shape[1] - centerWidth) / 2)), center.coords[2])
-    center = cuboid((centerLength, centerWidth, centerHeight), centerCoordsOffset)
+        # Combine components
+        coupon = end1 | center | end2
+        coupon = coupon.setMaterial(1)
 
-    # Set materials
-    end1 = end1.setMaterial(1)
-    end2 = end2.setMaterial(1)
-    center = center.setMaterial(2)
+        # Scaled center
+        newCenterLength = round(centerLength * centerLengthScale)
+        centerCoordsOffset = (center.coords[0] + round((centerLength - newCenterLength) / 2), center.coords[1], center.coords[2])
+        center = cuboid((newCenterLength, centerWidth, centerHeight), centerCoordsOffset)
+        center = center.setMaterial(2)
+        coupon = center | coupon
 
-    # Combine components
-    coupon = end1 | center | end2
-    coupon = coupon.setMaterial(1)
+        coupon_input = VoxelModel.copy(coupon)
 
-    # Scaled center
-    newCenterLength = round(centerLength * centerLengthScale)
-    centerCoordsOffset = (center.coords[0] + round((centerLength - newCenterLength) / 2), center.coords[1], center.coords[2])
-    center = cuboid((newCenterLength, centerWidth, centerHeight), centerCoordsOffset)
-    center = center.setMaterial(2)
-    coupon = center | coupon
+        start = time.time()
 
-    coupon_input = VoxelModel.copy(coupon)
+        # Generate transition regions
+        transition_1 = cuboid((blurRadius * res * 2, coupon.voxels.shape[1], coupon.voxels.shape[2]), (center.coords[0] - (blurRadius * res), 0, 0), 3)
+        transition_2 = cuboid((blurRadius * res * 2, coupon.voxels.shape[1], coupon.voxels.shape[2]), (center.coords[0] - (blurRadius * res) + newCenterLength, 0, 0), 3)
+        transition_regions = transition_1 | transition_2
+        transition_regions = transition_regions.getComponents()
 
-    start = time.time()
+        # Generate lattice elements
+        latticeSize = None
+        lattice_elements = None
+        if latticeEnable:
+            # Import Models
+            lattice_model = VoxelModel.fromVoxFile("lattice_elements/" + latticeElementFile + '.vox')
+            latticeSize = lattice_model.voxels.shape[0]
+            print('Lattice Element Imported')
 
-    # Generate transition regions
-    transition_1 = cuboid((blurRadius * res * 2, coupon.voxels.shape[1], coupon.voxels.shape[2]), (center.coords[0] - (blurRadius * res), 0, 0), 3)
-    transition_2 = cuboid((blurRadius * res * 2, coupon.voxels.shape[1], coupon.voxels.shape[2]), (center.coords[0] - (blurRadius * res) + newCenterLength, 0, 0), 3)
-    transition_regions = transition_1 | transition_2
-    transition_regions = transition_regions.getComponents()
+            # Generate Dilated Lattice Elements
+            lattice_elements = [VoxelModel.emptyLike(lattice_model)]
+            for r in range(minRadius, maxRadius + 1):
+                lattice_elements.append(lattice_model.dilate(r))
+            lattice_elements.append(cuboid(lattice_model.voxels.shape))
+            print('Lattice Elements Generated')
 
-    # Generate lattice elements
-    latticeSize = None
-    lattice_elements = None
-    if latticeEnable:
-        # Import Models
-        lattice_model = VoxelModel.fromVoxFile("lattice_elements/" + lattice_element_file + '.vox')
-        latticeSize = lattice_model.voxels.shape[0]
-        print('Lattice Element Imported')
+        elif gyroidEnable:
+            # Import Models
+            s = center.voxels.shape[2]
 
-        # Generate Dilated Lattice Elements
-        lattice_elements = [VoxelModel.emptyLike(lattice_model)]
-        for r in range(min_radius, max_radius + 1):
-            lattice_elements.append(lattice_model.dilate(r))
-        lattice_elements.append(cuboid(lattice_model.voxels.shape))
-        print('Lattice Elements Generated')
+            if gyroidType == 2:
+                lattice_model_1, lattice_model_2 = schwarzP((s,s,s), s)
+            elif gyroidType == 3:
+                lattice_model_1, lattice_model_2 = schwarzD((s,s,s), s)
+            elif gyroidType == 4:
+                lattice_model_1, lattice_model_2 = FRD((s,s,s), s)
+            else: # gyroidType == 1
+                lattice_model_1, lattice_model_2 = gyroid((s,s,s), s)
 
-    elif gyroidEnable:
-        # Import Models
-        s = center.voxels.shape[2]
-        lattice_model_1, lattice_model_2 = schwarzD((s,s,s), s)
-        latticeSize = s
-        print('Lattice Element Imported')
+            latticeSize = s
+            print('Lattice Element Imported')
 
-        # Generate Dilated Lattice Elements
-        lattice_elements = [VoxelModel.emptyLike(lattice_model_1)]
-        for r in range(0, gyroid_max_erode):
-            lattice_elements.append(lattice_model_1.difference(lattice_model_2.dilate(gyroid_max_erode - r)))
-        for r in range(0, gyroid_max_dilate+1):
-            lattice_elements.append(lattice_model_1.dilate(r))
-        lattice_elements.append(cuboid(lattice_model_1.voxels.shape))
-        print('Lattice Elements Generated')
+            # Generate Dilated Lattice Elements
+            lattice_elements = [VoxelModel.emptyLike(lattice_model_1)]
+            for r in range(0, gyroidMaxErode):
+                lattice_elements.append(lattice_model_1.difference(lattice_model_2.dilate(gyroidMaxErode - r)))
+            for r in range(0, gyroidMaxDilate + 1):
+                lattice_elements.append(lattice_model_1.dilate(r))
+            lattice_elements.append(cuboid(lattice_model_1.voxels.shape))
+            print('Lattice Elements Generated')
 
-    # Generate transitions
-    for c in range(transition_regions.numComponents):
-        print('Component #' + str(c+1))
-        transition = coupon_input & (transition_regions.isolateComponent(c+1))
-        transitionCenter = transition.getCenter()
-        transition = transition.fitWorkspace()
-        print(transitionCenter)
+        # Generate transitions
+        for c in range(transition_regions.numComponents):
+            print('Component #' + str(c+1))
+            transition = coupon_input & (transition_regions.isolateComponent(c+1))
+            transitionCenter = transition.getCenter()
+            transition = transition.fitWorkspace()
+            print(transitionCenter)
 
-        if blurEnable: # Blur materials
-            print('Blurring')
-            transition_scaled = transition.blur(blurRadius*res)                 # Apply blur
-            transition_scaled = transition_scaled.scaleValues()                 # Cleanup values
-            transition_scaled = transition_scaled.setCenter(transitionCenter)   # Center processed model on target region
-            transition = transition_scaled & transition                         # Trim excess voxels
+            if blurEnable: # Blur materials
+                print('Blurring')
+                transition_scaled = transition.blur(blurRadius*res)                 # Apply blur
+                transition_scaled = transition_scaled.scaleValues()                 # Cleanup values
+                transition_scaled = transition_scaled.setCenter(transitionCenter)   # Center processed model on target region
+                transition = transition_scaled & transition                         # Trim excess voxels
 
-        elif ditherEnable: # Dither materials
-            print('Dithering')
-            x_len = int(transition.voxels.shape[0])
-            y_len = int(transition.voxels.shape[1])
-            z_len = int(transition.voxels.shape[2])
+            elif ditherEnable: # Dither materials
+                print('Dithering')
+                x_len = int(transition.voxels.shape[0])
+                y_len = int(transition.voxels.shape[1])
+                z_len = int(transition.voxels.shape[2])
 
-            transition_scaled = transition.blur(blurRadius*res*1.5)
-            transition_scaled = transition_scaled.scale((1 / processingRes))                            # Reduce to processing scale and dilate to compensate for rounding errors
-            # transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False)   # Apply Dither
-            # transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8)   # Apply Dither
-            transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8, x_error=0.8)   # Apply Dither
-            transition_scaled = transition_scaled.scaleValues()                                         # Cleanup values
-            transition_scaled = transition_scaled.scaleToSize(x_len, y_len, z_len)                      # Increase to original scale
-            transition_scaled = transition_scaled.setCenter(transitionCenter)                           # Center processed model on target region
-            transition = transition_scaled & transition                                                 # Trim excess voxels
+                transition_scaled = transition.blur(blurRadius*res*1.5)
+                transition_scaled = transition_scaled.scale((1 / processingRes))                            # Reduce to processing scale and dilate to compensate for rounding errors
 
-        elif latticeEnable or gyroidEnable:
-            print('Lattice')
+                if ditherType == 2:
+                    transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8, x_error=0.8)   # Apply Dither
+                elif ditherType == 3:
+                    transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8)   # Apply Dither
+                else: # ditherType == 1
+                    transition_scaled = dither(transition_scaled, blurRadius * (res / processingRes), blur=False)  # Apply Dither
 
-            boxX = math.ceil(transition.voxels.shape[0] / latticeSize)
-            boxY = math.ceil(transition.voxels.shape[1] / latticeSize)
-            boxZ = math.ceil(transition.voxels.shape[2] / latticeSize)
-            print([boxX, boxY, boxZ])
+                transition_scaled = transition_scaled.scaleValues()                                         # Cleanup values
+                transition_scaled = transition_scaled.scaleToSize(x_len, y_len, z_len)                      # Increase to original scale
+                transition_scaled = transition_scaled.setCenter(transitionCenter)                           # Center processed model on target region
+                transition = transition_scaled & transition                                                 # Trim excess voxels
 
-            lattice_locations = transition.scaleToSize(boxX, boxY, boxZ)
-            lattice_locations = lattice_locations.blur(blurRadius*(res/latticeSize))
-            lattice_locations = lattice_locations.scaleValues()
-            lattice_locations = lattice_locations - lattice_locations.setMaterial(2)
-            lattice_locations = lattice_locations.scaleNull()
+            elif latticeEnable or gyroidEnable:
+                print('Lattice')
 
-            # Convert processed model to lattice
-            lattice_result = VoxelModel.emptyLike(lattice_locations)
+                boxX = math.ceil(transition.voxels.shape[0] / latticeSize)
+                boxY = math.ceil(transition.voxels.shape[1] / latticeSize)
+                boxZ = math.ceil(transition.voxels.shape[2] / latticeSize)
+                print([boxX, boxY, boxZ])
 
-            for x in tqdm(range(boxX), desc='Adding lattice elements'):
-                for y in range(boxY):
-                    for z in range(boxZ):
-                        i = lattice_locations.voxels[x, y, z]
-                        density = lattice_locations.materials[i, 0] * (1 - lattice_locations.materials[i, 1])
+                lattice_locations = transition.scaleToSize(boxX, boxY, boxZ)
+                lattice_locations = lattice_locations.blur(blurRadius*(res/latticeSize))
+                lattice_locations = lattice_locations.scaleValues()
+                lattice_locations = lattice_locations - lattice_locations.setMaterial(2)
+                lattice_locations = lattice_locations.scaleNull()
 
-                        if density < 1e-10:
-                            r = 0
-                        elif density > (1 - 1e-10):
-                            r = len(lattice_elements) - 1
-                        else:
-                            r = round(density * (len(lattice_elements) - 3)) + 1
+                # Convert processed model to lattice
+                lattice_result = VoxelModel.emptyLike(lattice_locations)
 
-                        r = int(r)
+                for x in tqdm(range(boxX), desc='Adding lattice elements'):
+                    for y in range(boxY):
+                        for z in range(boxZ):
+                            i = lattice_locations.voxels[x, y, z]
+                            density = lattice_locations.materials[i, 0] * (1 - lattice_locations.materials[i, 1])
 
-                        locationOffset = round((lattice_elements[r].voxels.shape[0] - latticeSize) / 2)
+                            if density < 1e-10:
+                                r = 0
+                            elif density > (1 - 1e-10):
+                                r = len(lattice_elements) - 1
+                            else:
+                                r = round(density * (len(lattice_elements) - 3)) + 1
 
-                        x2 = (x * latticeSize) - locationOffset
-                        y2 = (y * latticeSize) - locationOffset
-                        z2 = (z * latticeSize) - locationOffset
+                            r = int(r)
 
-                        lattice_elements[r].coords = (x2, y2, z2) # Do not use setCoords here
+                            locationOffset = round((lattice_elements[r].voxels.shape[0] - latticeSize) / 2)
 
-                        lattice_result = lattice_result.union(lattice_elements[r])
+                            x2 = (x * latticeSize) - locationOffset
+                            y2 = (y * latticeSize) - locationOffset
+                            z2 = (z * latticeSize) - locationOffset
 
-            lattice_result = lattice_result.setMaterial(1)
-            lattice_result = lattice_result.setCenter(transitionCenter)   # Center processed model on target region
-            transition_scaled = lattice_result & transition               # Trim excess voxels
-            transition = transition_scaled | transition.setMaterial(2)
+                            lattice_elements[r].coords = (x2, y2, z2) # Do not use setCoords here
 
-        transition = transition & coupon    # Trim excess voxels
-        coupon = transition | coupon        # Add to result
+                            lattice_result = lattice_result.union(lattice_elements[r])
 
-    coupon = coupon.round(materialStep)
-    coupon = coupon.removeDuplicateMaterials()
+                lattice_result = lattice_result.setMaterial(1)
+                lattice_result = lattice_result.setCenter(transitionCenter)   # Center processed model on target region
+                transition_scaled = lattice_result & transition               # Trim excess voxels
+                transition = transition_scaled | transition.setMaterial(2)
 
-    end = time.time()
-    processingTime = (end - start)
-    print("Processing time = %s" % processingTime)
+            transition = transition & coupon    # Trim excess voxels
+            coupon = transition | coupon        # Add to result
 
-    if display:
-        # Create mesh data
-        print('Meshing')
-        mesh1 = Mesh.fromVoxelModel(coupon_input.difference(transition_regions).setMaterial(3) | coupon, resolution=res)
+        coupon = coupon.round(materialStep)
+        coupon = coupon.removeDuplicateMaterials()
 
-        # Create plot
-        print('Plotting')
-        plot1 = Plot(mesh1, grids=True, drawEdges=True, positionOffset = (35, 2, 0), viewAngle=(50, 40, 200), resolution=(720, 720), name=couponStandard)
-        plot1.show()
-        app1.processEvents()
+        end = time.time()
+        processingTime = (end - start)
+        print("Processing time = %s" % processingTime)
 
-    if save:
-        print('Saving')
-        coupon.saveVF('output')
+        if display:
+            # Create mesh data
+            print('Meshing')
+            mesh1 = Mesh.fromVoxelModel(coupon_input.difference(transition_regions).setMaterial(3) | coupon, resolution=res)
 
-    if export:
-        print('Exporting')
+            # Create plot
+            print('Plotting')
+            plot1 = Plot(mesh1, grids=True, drawEdges=True, positionOffset = (35, 2, 0), viewAngle=(50, 40, 200), resolution=(720, 720), name=filename)
+            plot1.show()
+            app1.processEvents()
 
-        try:
-            os.mkdir('stl_output')
-        except OSError:
-            print('Output folder already exists')
-        else:
-            print('Output folder successfully created')
+        if save:
+            try:
+                os.mkdir(outputFolder)
+            except OSError:
+                print('Output folder already exists')
+            else:
+                print('Output folder successfully created')
 
-        for m in range(1, len(coupon.materials)):
-            current_mesh = Mesh.fromVoxelModel(coupon.isolateMaterial(m), resolution=res)
-            current_mesh.export(('stl_output/' + couponStandard + '_mat_' + str(m) + '_' + str(coupon.materials[m, 2]) + '.stl'))
+            print('Saving')
+            coupon.saveVF(outputFolder + '/output_' + filename)
+
+        if export:
+            print('Exporting')
+
+            try:
+                os.mkdir(outputFolder + '/stl_output_' + filename)
+            except OSError:
+                print('Output folder already exists')
+            else:
+                print('Output folder successfully created')
+
+            for m in range(1, len(coupon.materials)):
+                current_mesh = Mesh.fromVoxelModel(coupon.isolateMaterial(m), resolution=res)
+                current_mesh.export((outputFolder + '/stl_output_' + filename +'/' + couponStandard + '_mat_' + str(m) + '_' + str(coupon.materials[m, 2]) + '.stl'))
 
     print('Finished')
     app1.exec_()

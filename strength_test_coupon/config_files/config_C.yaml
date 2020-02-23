@@ -1,0 +1,17 @@
+# C - 3D Dither
+
+filename: 'C'
+
+res: 5
+couponStandard: D638
+centerLengthScale: 1.1897 # transition length scale multiplier
+blurRadius: 6 # mm -- transition region width * 1/2
+materialStep: 0.2 # material step size of final result
+
+ditherEnable: True
+
+ditherType: 1 # 1 - xyz, 2 - xy, 3 - y
+processingRes: 4 # voxels per processed voxel
+
+
+
