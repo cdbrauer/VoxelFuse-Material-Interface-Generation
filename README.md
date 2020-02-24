@@ -33,7 +33,7 @@ __Example Outputs__
 
 ![tensile test coupon example image](../master/strength_test_coupon/stl_files_v2_combined/assembled_components.png?raw=true)
 
-![tensile test coupon example print](../master/strength_test_coupon/all-samples-1.png?raw=true)
+![tensile test coupon example print](../master/strength_test_coupon/all-samples-1.jpg?raw=true)
 
 ## dithering
 `dither.py` - Functions for applying 3D dithering to a model
