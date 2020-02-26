@@ -24,14 +24,14 @@ from voxelfuse.voxel_model import Axes
 from dithering.dither import dither
 from dithering.thin import thin
 
-configIDs = ['K'] #['A', 'B', 'C', 'D', 'E', 'F', 'G, 'H', 'I', 'J', 'K']
+configIDs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']
 
 # Set desired outputs
 display = False
 save = True
-export = True
+export = False
 
-outputFolder = 'stl_files_v4.1_combined'
+outputFolder = 'stl_files_v4.2_combined'
 
 if __name__=='__main__':
     for configID in configIDs:

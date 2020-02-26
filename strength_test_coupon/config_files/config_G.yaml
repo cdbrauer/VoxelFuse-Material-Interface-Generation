@@ -4,7 +4,7 @@ filename: 'G'
 
 res: 5
 couponStandard: D638
-centerLengthScale: 1.1646 # transition length scale multiplier
+centerLengthScale: 1.15924691305341 # transition length scale multiplier
 blurRadius: 6 # mm -- transition region width * 1/2
 materialStep: 0.2 # material step size of final result
 
