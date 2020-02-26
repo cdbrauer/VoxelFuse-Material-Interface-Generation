@@ -23,7 +23,7 @@ if __name__=='__main__':
     export = True # STL file for slicing
 
     # Open Files
-    outputFolder = 'stl_files_v4.1_combined/'
+    outputFolder = 'stl_files_v4.2_combined/'
     outputFile = 'output_combined'
     files = ['output_A', 'output_B', 'output_C', 'output_D', 'output_E', 'output_F', 'output_G', 'output_H', 'output_I', 'output_J', 'output_K']
 
