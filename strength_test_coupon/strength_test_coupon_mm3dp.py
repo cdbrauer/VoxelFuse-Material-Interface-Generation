@@ -1,5 +1,5 @@
 """
-Copyright 2018-2020
+Copyright 2020
 Dan Aukes, Cole Brauer
 
 Generate coupon for tensile testing
@@ -244,6 +244,7 @@ if __name__=='__main__':
 
         coupon = coupon.round(materialStep)
         coupon = coupon.removeDuplicateMaterials()
+        coupon.resolution = res
 
         end = time.time()
         processingTime = (end - start)

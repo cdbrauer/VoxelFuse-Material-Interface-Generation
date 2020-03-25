@@ -16,12 +16,12 @@ from voxelfuse.plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
-    display = True # Display output
-    export = False # STL file for slicing
     cleanup = False # Remove duplicate materials and save file
+    export = False # STL file for slicing
+    display = True # Display output
 
     # Open File
-    file = 'stl_files_v4_combined/output-combined'
+    file = 'stl_files_v4.2_combined/output_A'
     model = VoxelModel.openVF(file)
 
     # Cleanup operations
