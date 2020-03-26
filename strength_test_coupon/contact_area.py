@@ -27,6 +27,7 @@ if __name__=='__main__':
     transitionCenter = 71.1
     materialToMeasure = 1
 
+    largestOnly = True # Only look at the largest component of each material
     cleanup = False # Remove duplicate materials
     display = False # Display output
 
@@ -41,18 +42,36 @@ if __name__=='__main__':
     testRegionLocation = (model.coords[0] + round(transitionCenter*res) - round(testRegionSize[0]*.5), model.coords[1], model.coords[2])
     test_region = cuboid(testRegionSize, testRegionLocation, material=3, resolution=res)
 
-    # Isolate the region of the model that intersects with the test region
-    model_cropped = model & test_region
-
     # Cleanup operations
     if cleanup:
-        model_cropped.materials = np.round(model_cropped.materials, 3)
-        model_cropped = model_cropped.removeDuplicateMaterials()
+        model.materials = np.round(model.materials, 3)
+        model = model.removeDuplicateMaterials()
+
+    # Crop the model to the region of interest
+    model_cropped = VoxelModel.emptyLike(model)
+    if largestOnly:
+        # Isolate the region of the model that intersects with the test region
+        model_cropped_all_components = model & test_region
+
+        # Loop through each material in model
+        for m in range(1, len(model_cropped.materials)):
+            model_current_material = model_cropped_all_components.isolateMaterial(m)
+            model_current_material = model_current_material.getComponents()
+
+            # Find the volume of each component made of this material
+            componentVolumes = np.zeros(model_current_material.numComponents+1)
+            for c in range(1, model_current_material.numComponents+1):
+                componentVolumes[c], _ = model_current_material.getVolume(component=c)
+
+            # Identify the largest component and add to cropped model
+            largestComponent = componentVolumes.argmax()
+            model_cropped = model_current_material.isolateComponent(largestComponent) | model_cropped
+    else:
+        # Isolate the region of the model that intersects with the test region
+        model_cropped = model & test_region
 
     # Isolate the material of interest
     model_single_material = model_cropped.isolateMaterial(materialToMeasure)
-    #model_single_material = model_single_material.getComponents()
-    #model_single_material = model_single_material.isolateComponent(1)
 
     # Find exterior voxels
     surfaceVoxelsArray = model_single_material.difference(model_single_material.erode(radius=1, connectivity=1)).voxels
@@ -101,7 +120,7 @@ if __name__=='__main__':
     print('Surface area: ' + str(totalSurfaceCount*(1/res)*(1/res)) + ' mm^2')
 
     if display:
-        mesh = Mesh.fromVoxelModel(model_single_material.setMaterial(3) | model)
+        mesh = Mesh.fromVoxelModel(model_single_material.setMaterial(4) | model_cropped.setMaterial(3) | model)
 
         # Create Plot
         plot1 = Plot(mesh, grids=True)
