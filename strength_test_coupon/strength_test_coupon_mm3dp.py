@@ -22,7 +22,6 @@ from voxelfuse.periodic import *
 from voxelfuse.voxel_model import Axes
 
 from dithering.dither import dither
-from dithering.thin import thin
 
 configIDs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K']
 
