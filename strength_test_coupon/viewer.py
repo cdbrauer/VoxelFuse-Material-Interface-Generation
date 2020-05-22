@@ -29,6 +29,11 @@ if __name__=='__main__':
     # Apply scale factor
     model = model.scale(scaleFactor)
 
+    # Apply rubber material
+    modelRubber = model.isolateMaterial(1)
+    modelRubber = modelRubber.setMaterial(8)
+    model = modelRubber | model
+
     # Cleanup operations
     if cleanup:
         model.materials = np.round(model.materials, 3)
@@ -44,6 +49,7 @@ if __name__=='__main__':
     # Create VXC file
     if exportSim:
         model.saveVXC(file + '_sim', compression=False)
+        model.saveVXC(file + '_sim_compressed', compression=True)
 
     if display:
         mesh = Mesh.fromVoxelModel(model)
