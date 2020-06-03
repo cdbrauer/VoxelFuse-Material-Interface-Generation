@@ -8,6 +8,7 @@ import PyQt5.QtGui as qg
 import sys
 import numpy as np
 from voxelfuse.voxel_model import VoxelModel
+from voxelfuse.simulation import Simulation
 from voxelfuse.voxel_model import Dir
 from voxelfuse.mesh import Mesh
 from voxelfuse.plot import Plot
@@ -16,14 +17,14 @@ from voxelfuse.plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
-    scaleFactor = 0.2 # Scale the model to increase/decrease resolution
+    scaleFactor = 0.25 # Scale the model to increase/decrease resolution
     cleanup = False # Remove duplicate materials and save file
     export = False # STL file for slicing
-    exportSim = True # VXC file for simulation
-    display = True # Display output
+    exportSim = True # VXA file for simulation
+    display = False # Display output
 
     # Open File
-    file = 'stl_files_v4.2_combined/output_A'
+    file = 'stl_files_v4.2_combined/output_C'
     model = VoxelModel.openVF(file)
 
     # Apply scale factor
@@ -46,10 +47,13 @@ if __name__=='__main__':
             mesh = Mesh.fromVoxelModel(model.isolateMaterial(m).fitWorkspace())
             mesh.export(file + '-' + str(m) + '.stl')
 
-    # Create VXC file
+    # Create simulation file
     if exportSim:
-        model.saveVXC(file + '_sim', compression=False)
-        model.saveVXC(file + '_sim_compressed', compression=True)
+        simulation = Simulation(model) # Initialize a simulation
+        simulation.setCollision() # Enable self collisions with default settings
+        simulation.addBoundaryConditionBox() # Add a box boundary with default settings (fixed constraint, YZ plane at X=0)
+        simulation.addBoundaryConditionBox(position=(0.99, 0, 0), displacement=(30, 0, 0)) # Add a boundary condition at x = max, leave other settings at default (fixed constraint, YZ plane)
+        simulation.launchSim(file + '_sim', delete_files=True)  # Launch simulation, do not save simulation file
 
     if display:
         mesh = Mesh.fromVoxelModel(model)
