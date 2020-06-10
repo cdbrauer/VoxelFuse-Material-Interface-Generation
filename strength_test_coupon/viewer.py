@@ -51,8 +51,8 @@ if __name__=='__main__':
     if exportSim:
         simulation = Simulation(model) # Initialize a simulation
         simulation.setCollision() # Enable self collisions with default settings
-        simulation.addBoundaryConditionBox() # Add a box boundary with default settings (fixed constraint, YZ plane at X=0)
-        simulation.addBoundaryConditionBox(position=(0.99, 0, 0), displacement=(30, 0, 0)) # Add a boundary condition at x = max, leave other settings at default (fixed constraint, YZ plane)
+        simulation.addBoundaryConditionBox() # Add a box boundary condition with default settings (fixed constraint, YZ plane at X=0)
+        simulation.addBoundaryConditionBox(position=(0.99, 0, 0), displacement=(30, 0, 0)) # Add a boundary condition at X = max, apply a 30mm displacement for tensile testing
         simulation.launchSim(file + '_sim', delete_files=True)  # Launch simulation, do not save simulation file
 
     if display:
