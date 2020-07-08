@@ -17,11 +17,11 @@ from voxelfuse.plot import Plot
 if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
+    # Settings
     scaleFactor = 0.25 # Scale the model to increase/decrease resolution
     cleanup = False # Remove duplicate materials and save file
     export = False # STL file for slicing
-    exportSim = True # VXA file for simulation
-    display = False # Display output
+    display = True # Display output
 
     # Open File
     file = 'stl_files_v4.2_combined/output_C'
@@ -32,7 +32,7 @@ if __name__=='__main__':
 
     # Apply rubber material
     modelRubber = model.isolateMaterial(1)
-    modelRubber = modelRubber.setMaterial(8)
+    modelRubber = modelRubber.setMaterial(5)
     model = modelRubber | model
 
     # Cleanup operations
@@ -47,14 +47,7 @@ if __name__=='__main__':
             mesh = Mesh.fromVoxelModel(model.isolateMaterial(m).fitWorkspace())
             mesh.export(file + '-' + str(m) + '.stl')
 
-    # Create simulation file
-    if exportSim:
-        simulation = Simulation(model) # Initialize a simulation
-        simulation.setCollision() # Enable self collisions with default settings
-        simulation.addBoundaryConditionBox() # Add a box boundary condition with default settings (fixed constraint, YZ plane at X=0)
-        simulation.addBoundaryConditionBox(position=(0.99, 0, 0), displacement=(30, 0, 0)) # Add a boundary condition at X = max, apply a 30mm displacement for tensile testing
-        simulation.launchSim(file + '_sim', delete_files=True)  # Launch simulation, do not save simulation file
-
+    # Display viewer window
     if display:
         mesh = Mesh.fromVoxelModel(model)
 
