@@ -1,5 +1,5 @@
 """
-Copyright 2019
+Copyright 2020
 Dan Aukes, Cole Brauer
 """
 
@@ -45,25 +45,26 @@ if __name__=='__main__':
     # Create results file
     f = open(file + '_tensile_test.csv', 'w+')
     print('Saving file: ' + f.name)
-    f.write('Displacement,Min Safety Factor,Center Stress,Center Strain,Center Safety Factor\n')
+    f.write('Displacement,Min Safety Factor,Center Stress,Center Strain X,Center Strain Y,Center Strain Z,Center Safety Factor\n')
     f.close()
 
-    for d in range(displacementStep, displacementMax, displacementStep):
+    for d in range(displacementStep, displacementMax+displacementStep, displacementStep):
         # Set boundary conditions
         simulation.clearBoundaryConditions()
         simulation.addBoundaryConditionBox(position=(0, 0, 0), size=(0.01, 1.0, 1.0)) # Add a fixed boundary condition at X = min
-        simulation.addBoundaryConditionBox(position=(0, 0, 0), size=(1.0, 1.0, 1.0), fixed_dof=0b000100) # Add a fixed boundary condition in Z
         simulation.addBoundaryConditionBox(position=(0.99, 0, 0), size=(0.01, 1.0, 1.0), displacement=(d, 0, 0)) # Add a boundary condition at X = max, apply displacement for tensile testing
 
         # Launch simulation, do not save simulation file
+        # simulation.runSimVoxCad(file + '_sim')
         simulation.runSim(file + '_sim', 9)
+        print(simulation.results)
 
         # Save results
         f = open(file + '_tensile_test.csv', 'a+')
         f.write(str(d) + ',')
         f.write(str(np.min(simulation.valueMap[np.nonzero(simulation.valueMap)])) + ',')
         f.write(str(simulation.results[0]['BondStress']) + ',')
-        f.write(str(simulation.results[0]['Strain']) + ',')
+        f.write(str(simulation.results[0]['Strain']).replace('(', '').replace(')', '') + ',')
         f.write(str(simulation.results[0]['SafetyFactor']) + '\n')
         f.close()
 
