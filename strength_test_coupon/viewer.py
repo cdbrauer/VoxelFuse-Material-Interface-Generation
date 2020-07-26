@@ -18,17 +18,17 @@ if __name__=='__main__':
     app1 = qg.QApplication(sys.argv)
 
     # Settings
-    scaleFactor = 0.25 # Scale the model to increase/decrease resolution
+    # scaleFactor = 1 # Scale the model to increase/decrease resolution
     cleanup = False # Remove duplicate materials and save file
     export = False # STL file for slicing
     display = True # Display output
 
     # Open File
-    file = 'stl_files_v4.2_combined/output_C'
+    file = 'stl_files_v5_combined/output_B.vf'
     model = VoxelModel.openVF(file)
 
     # Apply scale factor
-    model = model.scale(scaleFactor)
+    # model = model.scale(scaleFactor)
 
     # Apply rubber material
     modelRubber = model.isolateMaterial(1)
