@@ -24,16 +24,16 @@ if __name__=='__main__':
     display = True # Display output
 
     # Open File
-    file = 'stl_files_v5_combined/output_B.vf'
+    file = 'stl_files_v5_combined/output_B_normalized.vf'
     model = VoxelModel.openVF(file)
 
     # Apply scale factor
     # model = model.scale(scaleFactor)
 
     # Apply rubber material
-    modelRubber = model.isolateMaterial(1)
-    modelRubber = modelRubber.setMaterial(5)
-    model = modelRubber | model
+    # modelRubber = model.isolateMaterial(1)
+    # modelRubber = modelRubber.setMaterial(5)
+    # model = modelRubber | model
 
     # Cleanup operations
     if cleanup:

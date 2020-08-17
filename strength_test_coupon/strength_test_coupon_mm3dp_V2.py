@@ -23,12 +23,13 @@ from voxelfuse.voxel_model import Axes
 
 from dithering.dither import dither
 
-configIDs = ['A', 'B', 'C', 'E']
+configIDs = ['B'] # ['A', 'B', 'C', 'E']
 
 # Set desired outputs
 display = False
 save = True
 export = True
+spacing = 200 # Duplicate spacing
 
 outputFolder = 'stl_files_v5_combined'
 
@@ -259,19 +260,25 @@ if __name__=='__main__':
 
         # Create Duplicates
         size = coupon.voxels.shape
-        spacing = 25
         coupon_set = VoxelModel.copy(coupon).setCoords((0,0,0))
-        coupon_set = coupon_set | coupon.setCoords((0, size[1] + spacing, 0))
-        coupon_set = coupon_set | coupon.setCoords((0, 2*size[1] + 2*spacing, 0))
-        coupon_set = coupon_set | coupon.rotate90(1, Axes.Z).setCoords((0, 3*size[1] + 3*spacing, 0))
-        coupon_set = coupon_set | coupon.rotate90(1, Axes.Z).setCoords((size[1] + spacing, 3*size[1] + 3*spacing, 0))
-        coupon_set = coupon_set | coupon.rotate90(1, Axes.Z).setCoords((2*size[1] + 2*spacing, 3*size[1] + 3*spacing, 0))
+        coupon_set = coupon_set | coupon.setCoords((0, spacing, 0))
+        coupon_set = coupon_set | coupon.setCoords((0, 2*spacing, 0))
+        coupon_set = coupon_set | coupon.rotate90(1, Axes.Z).setCoords((0, 3*spacing, 0))
+        coupon_set = coupon_set | coupon.rotate90(1, Axes.Z).setCoords((spacing, 3*spacing, 0))
+        coupon_set = coupon_set | coupon.rotate90(1, Axes.Z).setCoords((2*spacing, 3*spacing, 0))
+
+        # ID Notches
+        notch = cube(size[2])
+        coupon_set = coupon_set.difference(notch.setCoords((0, int((size[1]-size[2])/2), 0)))
+        coupon_set = coupon_set.difference(notch.setCoords((0, int(((size[1]-size[2])/2) + spacing), 0)))
+        coupon_set = coupon_set.difference(notch.setCoords((0, int(((size[1]-size[2])/2) + 2*spacing), 0)))
 
         # coupon_set = VoxelModel.copy(coupon).setCoords((0,0,0))
         # coupon_set = coupon_set | coupon.rotate90(1, Axes.X).setCoords((0, size[1] + spacing, 0))
         # coupon_set = coupon_set | coupon.rotate90(1, Axes.Z).setCoords((0, size[1] + size[2] + 2*spacing, 0))
         # coupon_set = coupon_set | coupon.rotate90(1, Axes.X).rotate90(1, Axes.Z).setCoords((size[1] + spacing, size[1] + size[2] + 2*spacing, 0))
 
+        # coupon_set = coupon_set.round(materialStep)
         coupon_set = coupon_set.removeDuplicateMaterials()
 
         if display:
