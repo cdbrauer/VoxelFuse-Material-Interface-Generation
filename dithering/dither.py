@@ -136,14 +136,23 @@ if __name__ == '__main__':
     blurResult = baseModel.blur(int(round(box_x/2)))
     ditherResult = dither(baseModel, int(round(box_x/2)))
 
+    # Create mesh data
+    for m in range(1, len(ditherResult.materials)):
+        currentMaterial = ditherResult.isolateMaterial(m)
+        currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        currentMesh.export('output_' + str(m) + '.stl')
+
+    baseMesh = Mesh.fromVoxelModel(baseModel)
     blurMesh = Mesh.fromVoxelModel(blurResult)
     ditherMesh = Mesh.fromVoxelModel(ditherResult)
 
-    plot1 = Plot(blurMesh)
-    plot2 = Plot(ditherMesh)
+    plot1 = Plot(baseMesh)
+    plot2 = Plot(blurMesh)
+    plot3 = Plot(ditherMesh)
 
     plot1.show()
     plot2.show()
+    plot3.show()
 
     app1.processEvents()
     app1.exec_()
