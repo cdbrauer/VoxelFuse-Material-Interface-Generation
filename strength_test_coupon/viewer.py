@@ -24,7 +24,7 @@ if __name__=='__main__':
     display = True # Display output
 
     # Open File
-    file = 'stl_files_v5_combined/output_B_normalized.vf'
+    file = 'stl_files_v5_combined/output_B1_default.vf'
     model = VoxelModel.openVF(file)
 
     # Apply scale factor
@@ -52,7 +52,7 @@ if __name__=='__main__':
         mesh = Mesh.fromVoxelModel(model)
 
         # Create Plot
-        plot1 = Plot(mesh)
+        plot1 = Plot(mesh, grids=True)
         plot1.show()
         app1.processEvents()
         app1.exec_()

@@ -1,0 +1,14 @@
+# B - Blur
+
+filename: 'B2_normalized'
+
+res: 5
+couponStandard: D638
+centerLengthScale: 1.10817557783591 # transition length scale multiplier
+blurRadius: 6 # mm -- transition region width * 1/2
+materialStep: 0.2 # material step size of final result
+
+blurEnable: True
+
+
+
