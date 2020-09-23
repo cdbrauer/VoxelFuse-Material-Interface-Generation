@@ -1,7 +1,10 @@
-import PyQt5.QtGui as qg
+import os
 import sys
+import time
+import PyQt5.QtGui as qg
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from voxelfuse.materials import material_properties
 from voxelfuse.mesh import Mesh
@@ -104,55 +107,107 @@ def ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_sprea
 
     return full_model
 
-def dither(model, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True):
+def memory_usage_psutil():
+    # return the memory usage in MB
+    import psutil
+    process = psutil.Process(os.getpid())
+    cpu = process.cpu_percent()
+    mem = process.memory_info()[0] / float(2 ** 20)
+    return [cpu, mem]
+
+def dither(model, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0, error_spread_threshold=0.8, blur=True, mem_use_log=[]):
     if radius == 0:
         return VoxelModel.copy(model)
 
     if blur:
         new_model = model.blur(radius)
+        mem_use_log.append(memory_usage_psutil())
         new_model = new_model.scaleValues()
+        mem_use_log.append(memory_usage_psutil())
     else:
         new_model = model.scaleValues()
+        mem_use_log.append(memory_usage_psutil())
 
     full_model = toFullMaterials(new_model.voxels, new_model.materials, len(material_properties)+1)
+    mem_use_log.append(memory_usage_psutil())
     full_model = ditherOptimized(full_model, use_full, x_error, y_error, z_error, error_spread_threshold)
+    mem_use_log.append(memory_usage_psutil())
 
-    return toIndexedMaterials(full_model, model)
+    return toIndexedMaterials(full_model, model), mem_use_log
+
+
 
 if __name__ == '__main__':
     app1 = qg.QApplication(sys.argv)
+    process_times = []
 
-    box_x = 25
-    box_y = 40
-    box_z = 40
+    plt.subplot(2,1,1)
+    plt.subplots_adjust(left=0.12, right=0.95, hspace=0.6)
 
-    box1 = cuboid((box_x, box_y, box_z), (0, 0, 0), 1)
-    box2 = cuboid((box_x, box_y, box_z), (box_x, 0, 0), 3)
-    box3 = cuboid((box_x, box_y, box_z), (box_x*2, 0, 0), 1)
-    baseModel = box1 | box2 | box3
-    print('Model Created')
+    scales = [1, 2, 5, 10]
+    for scale in scales:
+        mem_psutil = []
+        time_process_started = time.time()
+        box_x = round(25 * scale)
+        box_y = round(40 * scale)
+        box_z = round(40 * scale)
 
-    # Process Models
-    blurResult = baseModel.blur(int(round(box_x/2)))
-    ditherResult = dither(baseModel, int(round(box_x/2)))
+        box1 = cuboid((box_x, box_y, box_z), (0, 0, 0), 1)
+        mem_psutil.append(memory_usage_psutil())
+        box2 = cuboid((box_x, box_y, box_z), (box_x, 0, 0), 3)
+        mem_psutil.append(memory_usage_psutil())
+        box3 = cuboid((box_x, box_y, box_z), (box_x*2, 0, 0), 1)
+        mem_psutil.append(memory_usage_psutil())
+        baseModel = box1 | box2 | box3
+        mem_psutil.append(memory_usage_psutil())
+        print('Model Created')
 
-    # Create mesh data
-    for m in range(1, len(ditherResult.materials)):
-        currentMaterial = ditherResult.isolateMaterial(m)
-        currentMesh = Mesh.fromVoxelModel(currentMaterial)
-        currentMesh.export('output_' + str(m) + '.stl')
+        # Process Models
+        # blurResult = baseModel.blur(int(round(box_x/2)))
+        # mem_psutil.append(memory_usage_psutil())
+        ditherResult, mem_psutil = dither(baseModel, int(round(box_x/2)), mem_use_log=mem_psutil)
+        mem_psutil.append(memory_usage_psutil())
 
-    baseMesh = Mesh.fromVoxelModel(baseModel)
-    blurMesh = Mesh.fromVoxelModel(blurResult)
-    ditherMesh = Mesh.fromVoxelModel(ditherResult)
+        # Create mesh data
+        # for m in range(1, len(ditherResult.materials)):
+        #     currentMaterial = ditherResult.isolateMaterial(m)
+        #     currentMesh = Mesh.fromVoxelModel(currentMaterial)
+        #     currentMesh.export('output_' + str(m) + '.stl')
 
-    plot1 = Plot(baseMesh)
-    plot2 = Plot(blurMesh)
-    plot3 = Plot(ditherMesh)
+        # baseMesh = Mesh.fromVoxelModel(baseModel)
+        # blurMesh = Mesh.fromVoxelModel(blurResult)
+        ditherMesh = Mesh.fromVoxelModel(ditherResult)
+        mem_psutil.append(memory_usage_psutil())
 
-    plot1.show()
-    plot2.show()
-    plot3.show()
+        # plot1 = Plot(baseMesh)
+        # plot2 = Plot(blurMesh)
+        # plot3 = Plot(ditherMesh)
+        # mem_psutil.append(memory_usage_psutil())
+
+        # plot1.show()
+        # plot2.show()
+        # plot3.show()
+        # mem_psutil.append(memory_usage_psutil())
+        time_process_finished = time.time()
+
+        plt.plot(np.array(mem_psutil)[:, 1], label=str(scale))
+        process_times.append(time_process_finished - time_process_started)
+
+    # Plot results ##########################
+    plt.title("Memory Usage")
+    plt.xlabel("Program Step")
+    plt.ylabel("MB")
+    plt.legend(loc='upper left')
+    plt.grid()
+
+    plt.subplot(2,1,2)
+    plt.plot(scales, process_times)
+    plt.title("Total Process Time")
+    plt.xlabel("Scale")
+    plt.ylabel("Seconds")
+    plt.grid()
+
+    plt.show()
 
     app1.processEvents()
     app1.exec_()
