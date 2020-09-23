@@ -135,8 +135,6 @@ def dither(model, radius=1, use_full=True, x_error=0.0, y_error=0.0, z_error=0.0
 
     return toIndexedMaterials(full_model, model), mem_use_log
 
-
-
 if __name__ == '__main__':
     app1 = qg.QApplication(sys.argv)
     process_times = []
@@ -144,7 +142,7 @@ if __name__ == '__main__':
     plt.subplot(2,1,1)
     plt.subplots_adjust(left=0.12, right=0.95, hspace=0.6)
 
-    scales = [1, 2, 5, 10]
+    scales = [1, 2, 3, 4, 5]
     for scale in scales:
         mem_psutil = []
         time_process_started = time.time()
@@ -176,8 +174,8 @@ if __name__ == '__main__':
 
         # baseMesh = Mesh.fromVoxelModel(baseModel)
         # blurMesh = Mesh.fromVoxelModel(blurResult)
-        ditherMesh = Mesh.fromVoxelModel(ditherResult)
-        mem_psutil.append(memory_usage_psutil())
+        # ditherMesh = Mesh.fromVoxelModel(ditherResult)
+        # mem_psutil.append(memory_usage_psutil())
 
         # plot1 = Plot(baseMesh)
         # plot2 = Plot(blurMesh)
