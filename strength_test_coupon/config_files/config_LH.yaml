@@ -1,0 +1,18 @@
+# H - plus
+
+filename: 'H'
+
+res: 5
+couponStandard: D638
+centerLengthScale: 1.0000 # transition length scale multiplier
+blurRadius: 6 # mm -- transition region width * 1/2
+materialStep: 0.2 # material step size of final result
+
+latticeEnable: True
+
+latticeElementFile: 'lattice_element_2_30x30'
+minRadius: 3 # min radius that results in a printable structure
+maxRadius: 10 # max radius that results in a viable lattice element
+
+
+

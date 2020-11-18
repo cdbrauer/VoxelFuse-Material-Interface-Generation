@@ -115,3 +115,5 @@ lattice_transition/lattice_element_1_*
 /strength_test_coupon/old_versions/
 /strength_test_coupon/stl_files_v2_combined/*.stl
 /strength_test_coupon/stl_files_v3_combined/*.stl
+/strength_test_coupon/stl_files_v3_combined/Individual STL Files/
+/strength_test_coupon/stl_files_fdm_v1/*.stl

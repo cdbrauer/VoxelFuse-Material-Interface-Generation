@@ -23,11 +23,12 @@ if __name__=='__main__':
     export = True # STL file for slicing
 
     # Open Files
-    outputFolder = 'stl_files_v4.2_combined/'
+    outputFolder = 'stl_files_fdm_v1/'
     outputFile = 'output_combined'
-    files = ['output_A', 'output_B', 'output_C', 'output_D', 'output_E', 'output_F', 'output_G', 'output_H', 'output_I', 'output_J', 'output_K']
+    files = ['output_A', 'output_D', 'output_E', 'output_F', 'output_G', 'output_H', 'output_I', 'output_J', 'output_K']
+    # files = ['output_J', 'output_K']
 
-    model = VoxelModel.emptyLike(cube(1))
+    model = empty(resolution=res)
     for i in range(len(files)):
         new_model = VoxelModel.openVF(outputFolder + files[i])
         new_model = new_model.setCoords((0, i*110, 0))

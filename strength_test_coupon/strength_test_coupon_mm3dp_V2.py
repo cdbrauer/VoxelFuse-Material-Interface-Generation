@@ -23,14 +23,16 @@ from voxelfuse.voxel_model import Axes
 
 from dithering.dither import dither
 
-configIDs = ['B1', 'B2'] # ['A', 'B', 'C', 'E']
+configIDs = ['LA', 'LC', 'LD', 'LE', 'LF', 'LG', 'LH', 'LI', 'LJ', 'LK']
+# configIDs = ['LJ', 'LK']
+# configIDs = ['B1', 'B2'] # ['A', 'B', 'C', 'E']
 
 # Set desired outputs
 display = False
 save = True
 export = False
 
-outputFolder = 'stl_files_v5_combined'
+outputFolder = 'stl_files_fdm_v1'
 
 if __name__=='__main__':
     for configID in configIDs:
@@ -65,6 +67,7 @@ if __name__=='__main__':
 
         if gyroidEnable:
             gyroidType = config.get('gyroidType')
+            gyroidScale = config.get('gyroidScale')
             gyroidMaxDilate = config.get('gyroidMaxDilate')
             gyroidMaxErode = config.get('gyroidMaxErode')
 
@@ -140,7 +143,7 @@ if __name__=='__main__':
 
         elif gyroidEnable:
             # Import Models
-            s = center.voxels.shape[2]
+            s = center.voxels.shape[2] * gyroidScale
 
             if gyroidType == 2:
                 lattice_model_1, lattice_model_2 = schwarzP((s,s,s), s)
@@ -185,14 +188,14 @@ if __name__=='__main__':
                 z_len = int(transition.voxels.shape[2])
 
                 transition_scaled = transition.blur(blurRadius*res*1.5)
-                transition_scaled = transition_scaled.scale((1 / processingRes))                            # Reduce to processing scale and dilate to compensate for rounding errors
+                transition_scaled = transition_scaled.scale((1 / processingRes))    # Reduce to processing scale and dilate to compensate for rounding errors
 
                 if ditherType == 2:
-                    transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8, x_error=0.8)   # Apply Dither
+                    transition_scaled = transition_scaled.dither(blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8, x_error=0.8)   # Apply Dither
                 elif ditherType == 3:
-                    transition_scaled = dither(transition_scaled, blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8)   # Apply Dither
+                    transition_scaled = transition_scaled.dither(blurRadius*(res/processingRes), blur=False, use_full=False, y_error=0.8)   # Apply Dither
                 else: # ditherType == 1
-                    transition_scaled = dither(transition_scaled, blurRadius * (res / processingRes), blur=False)  # Apply Dither
+                    transition_scaled = transition_scaled.dither(blurRadius * (res / processingRes), blur=False)  # Apply Dither
 
                 transition_scaled = transition_scaled.scaleValues()                                         # Cleanup values
                 transition_scaled = transition_scaled.scaleToSize((x_len, y_len, z_len))                      # Increase to original scale

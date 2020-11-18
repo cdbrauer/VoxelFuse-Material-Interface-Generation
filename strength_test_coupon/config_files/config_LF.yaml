@@ -1,0 +1,19 @@
+# F - P-surface
+
+filename: 'F'
+
+res: 5
+couponStandard: D638
+centerLengthScale: 1.0000 # transition length scale multiplier
+blurRadius: 6 # mm -- transition region width * 1/2
+materialStep: 0.2 # material step size of final result
+
+gyroidEnable: True
+
+gyroidType: 2 # 1 - gyroid, 2 - p-surface, 3 - d-surface, 4 - FRD
+gyroidScale: 2
+gyroidMaxDilate: 1
+gyroidMaxErode: 2
+
+
+
