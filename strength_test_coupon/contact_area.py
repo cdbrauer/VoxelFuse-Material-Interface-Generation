@@ -32,7 +32,8 @@ if __name__=='__main__':
     display = False # Display output
 
     # Open File
-    file = 'stl_files_v4.2_combined/output_K'
+    # file = 'stl_files_v4.2_combined/output_K'
+    file = 'stl_files_fdm_v1/output_J'
     model = VoxelModel.openVF(file)
     model.resolution = 5 # Manually set resolution if not set in file
     res = model.resolution
